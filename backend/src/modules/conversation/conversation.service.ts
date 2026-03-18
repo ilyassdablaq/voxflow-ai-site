@@ -1,0 +1,79 @@
+import { AppError } from "../../common/errors/app-error.js";
+import { AiOrchestratorService } from "../../services/ai/ai-orchestrator.service.js";
+import { UsageService } from "../billing/usage.service.js";
+import { ConversationRepository } from "./conversation.repository.js";
+import { CreateConversationInput } from "./conversation.schemas.js";
+import { aiTasksQueue, transcriptionQueue, webhookQueue } from "../../infra/queue/queues.js";
+
+export class ConversationService {
+  constructor(
+    private readonly repository: ConversationRepository,
+    private readonly usageService: UsageService,
+    private readonly aiOrchestratorService: AiOrchestratorService,
+  ) {}
+
+  async createConversation(payload: CreateConversationInput, userId: string) {
+    await this.usageService.enforcePlanLimits(userId);
+
+    const conversation = await this.repository.createConversation({
+      userId,
+      title: payload.title,
+      language: payload.language,
+    });
+
+    if (payload.initialMessage) {
+      await this.repository.createMessage({
+        conversationId: conversation.id,
+        role: "USER",
+        content: payload.initialMessage,
+      });
+
+      const ai = await this.aiOrchestratorService.processTextTurn({
+        text: payload.initialMessage,
+        language: payload.language,
+      });
+
+      await this.repository.createMessage({
+        conversationId: conversation.id,
+        role: "ASSISTANT",
+        content: ai.responseText,
+        tokenCount: ai.tokenCount,
+        audioUrl: `data:${ai.audioMimeType};base64,${ai.audioBase64}`,
+      });
+
+      await this.usageService.trackUsage({
+        userId,
+        conversationId: conversation.id,
+        minutesUsed: ai.ttsDurationSeconds / 60,
+        tokensUsed: ai.tokenCount,
+      });
+
+      await aiTasksQueue.add("conversation-initial-response", {
+        conversationId: conversation.id,
+        userId,
+      });
+      await webhookQueue.add("conversation-started", {
+        conversationId: conversation.id,
+        userId,
+      });
+      await transcriptionQueue.add("transcription-audit", {
+        conversationId: conversation.id,
+      });
+    }
+
+    return conversation;
+  }
+
+  async getConversationMessages(conversationId: string, userId: string) {
+    const conversation = await this.repository.getConversationById(conversationId);
+    if (!conversation) {
+      throw new AppError(404, "CONVERSATION_NOT_FOUND", "Conversation not found");
+    }
+
+    if (conversation.userId !== userId) {
+      throw new AppError(403, "FORBIDDEN", "You cannot access this conversation");
+    }
+
+    return this.repository.getMessages(conversationId);
+  }
+}

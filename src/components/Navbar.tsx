@@ -50,10 +50,10 @@ const Navbar = () => {
           {/* CTA */}
           <div className="hidden md:flex items-center gap-3">
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/contact">Sign In</Link>
+              <Link to="/sign-in">Sign In</Link>
             </Button>
             <Button size="sm" className="glow-primary" asChild>
-              <Link to="/contact">Start Free Trial</Link>
+              <Link to="/sign-up">Start Free Trial</Link>
             </Button>
           </div>
 
@@ -91,8 +91,11 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
-              <Button size="sm" className="w-full mt-3 glow-primary" asChild>
-                <Link to="/contact" onClick={() => setMobileOpen(false)}>Start Free Trial</Link>
+              <Button variant="ghost" size="sm" className="w-full mt-3 justify-start" asChild>
+                <Link to="/sign-in" onClick={() => setMobileOpen(false)}>Sign In</Link>
+              </Button>
+              <Button size="sm" className="w-full glow-primary" asChild>
+                <Link to="/sign-up" onClick={() => setMobileOpen(false)}>Start Free Trial</Link>
               </Button>
             </div>
           </motion.div>
