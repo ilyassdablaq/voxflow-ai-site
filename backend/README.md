@@ -23,6 +23,7 @@ Clean modular architecture:
 - `POST /api/auth/refresh`
 - `POST /api/contact`
 - `GET /api/plans`
+- `GET /api/conversations`
 - `POST /api/conversations`
 - `GET /api/conversations/:id/messages`
 - `GET /health`
@@ -50,7 +51,10 @@ From repo root:
 
 ## Security
 - JWT access + refresh token flow
+- WebSocket connections require JWT (`Authorization: Bearer <token>` or `?token=` query)
+- Conversation ownership enforcement for WS and message endpoints
 - bcrypt password hashing
+- Password policy: minimum 8 chars with uppercase, lowercase, and number
 - RBAC helpers (`USER`, `ADMIN`)
 - API key middleware support (`x-api-key`)
 - Helmet, CORS, rate limiting via Redis

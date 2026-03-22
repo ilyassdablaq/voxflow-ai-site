@@ -1,59 +1,106 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { Plus, LogOut, Mic } from "lucide-react";
-import { authService } from "@/services/auth.service";
+import { Plus, Mic, Loader2, Pencil, Trash2, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Conversation {
-  id: string;
-  title?: string;
-  language: string;
-  status: string;
-  createdAt: string;
-}
+import { conversationService, ConversationSummary } from "@/services/conversation.service";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [newConversationLanguage, setNewConversationLanguage] = useState(
+    (navigator.language || "en").split("-")[0].toLowerCase(),
+  );
+  const [openingConversationId, setOpeningConversationId] = useState<string | null>(null);
+  const [renameConversationId, setRenameConversationId] = useState<string | null>(null);
+  const [renameTitle, setRenameTitle] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<ConversationSummary | null>(null);
 
-  useEffect(() => {
-    // Fetch conversations on mount
-    fetchConversations();
-  }, []);
+  const { data: conversations = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["conversations"],
+    queryFn: () => conversationService.listConversations(),
+  });
 
-  const fetchConversations = async () => {
-    setLoading(true);
-    try {
-      const token = authService.getAccessToken();
-      const response = await fetch("http://localhost:4001/api/conversations", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+  const createConversationMutation = useMutation({
+    mutationFn: (title: string) =>
+      conversationService.createConversation({
+        title,
+        language: newConversationLanguage,
+      }),
+    onSuccess: () => {
+      setNewTitle("");
+      void queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      toast({
+        title: "Success",
+        description: "Conversation created!",
       });
-
-      if (!response.ok) throw new Error("Failed to fetch conversations");
-
-      const data = await response.json();
-      setConversations(data);
-    } catch (error) {
-      console.error("Error fetching conversations:", error);
+    },
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to load conversations",
+        description: error instanceof Error ? error.message : "Failed to create conversation",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
 
-  const handleCreateConversation = async () => {
+  const renameConversationMutation = useMutation({
+    mutationFn: ({ id, title }: { id: string; title: string }) => conversationService.renameConversation(id, title),
+    onSuccess: () => {
+      setRenameConversationId(null);
+      setRenameTitle("");
+      void queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      toast({
+        title: "Conversation renamed",
+        description: "Title updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Rename failed",
+        description: error instanceof Error ? error.message : "Could not rename conversation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteConversationMutation = useMutation({
+    mutationFn: (id: string) => conversationService.deleteConversation(id),
+    onSuccess: () => {
+      setDeleteTarget(null);
+      void queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      toast({
+        title: "Conversation deleted",
+        description: "The conversation was removed.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Delete failed",
+        description: error instanceof Error ? error.message : "Could not delete conversation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateConversation = () => {
     if (!newTitle.trim()) {
       toast({
         title: "Error",
@@ -63,99 +110,67 @@ const Dashboard = () => {
       return;
     }
 
-    setLoading(true);
-    try {
-      const token = authService.getAccessToken();
-      const response = await fetch("http://localhost:4001/api/conversations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: newTitle,
-          language: "en",
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to create conversation");
-
-      const newConv = await response.json();
-      setConversations([newConv, ...conversations]);
-      setNewTitle("");
-      toast({
-        title: "Success",
-        description: "Conversation created!",
-      });
-    } catch (error) {
-      console.error("Error creating conversation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create conversation",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    createConversationMutation.mutate(newTitle.trim());
   };
 
-  const handleLogout = () => {
-    authService.clearTokens();
-    navigate("/");
-    toast({
-      title: "Logged out",
-      description: "See you soon!",
-    });
+  const handleOpenConversation = (conversationId: string) => {
+    setOpeningConversationId(conversationId);
+    navigate(`/conversation/${conversationId}`);
+  };
+
+  const startRenameConversation = (conversation: ConversationSummary) => {
+    setRenameConversationId(conversation.id);
+    setRenameTitle(conversation.title ?? "Untitled Conversation");
+  };
+
+  const saveRenameConversation = (conversationId: string) => {
+    const normalizedTitle = renameTitle.trim();
+    if (!normalizedTitle) {
+      toast({
+        title: "Invalid title",
+        description: "Please enter a conversation title.",
+        variant: "destructive",
+      });
+      return;
+    }
+    renameConversationMutation.mutate({ id: conversationId, title: normalizedTitle });
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Mic className="w-4 h-4 text-primary" />
-            </div>
-            <h1 className="font-heading font-bold text-xl text-foreground">
-              Vox<span className="text-primary">AI</span>
-            </h1>
-          </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <DashboardShell title="Conversations" description="Manage your AI conversations and continue where you left off.">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-8"
         >
-          {/* Welcome */}
-          <div>
-            <h2 className="text-3xl font-bold mb-2">Dashboard</h2>
-            <p className="text-muted-foreground">Welcome back! Manage your voice conversations here.</p>
-          </div>
-
           {/* Create New Conversation */}
           <div className="bg-card border border-border rounded-lg p-6 space-y-4">
             <h3 className="font-semibold text-lg">Create New Conversation</h3>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 type="text"
                 placeholder="Enter conversation title..."
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                disabled={loading}
+                aria-label="Conversation title"
+                disabled={createConversationMutation.isPending}
                 onKeyDown={(e) => e.key === "Enter" && handleCreateConversation()}
               />
-              <Button onClick={handleCreateConversation} disabled={loading}>
+              <select
+                value={newConversationLanguage}
+                onChange={(event) => setNewConversationLanguage(event.target.value)}
+                className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+                aria-label="Conversation language"
+                disabled={createConversationMutation.isPending}
+              >
+                <option value="en">English</option>
+                <option value="de">Deutsch</option>
+                <option value="fr">Français</option>
+                <option value="ar">العربية</option>
+              </select>
+              <Button onClick={handleCreateConversation} disabled={createConversationMutation.isPending}>
                 <Plus className="w-4 h-4 mr-2" />
-                Create
+                {createConversationMutation.isPending ? "Creating..." : "Create"}
               </Button>
             </div>
           </div>
@@ -163,41 +178,148 @@ const Dashboard = () => {
           {/* Conversations List */}
           <div>
             <h3 className="font-semibold text-lg mb-4">Your Conversations</h3>
-            {conversations.length === 0 ? (
+            {isLoading && (
+              <div className="grid gap-4" aria-live="polite" aria-busy="true">
+                {[0, 1, 2].map((idx) => (
+                  <div key={idx} className="bg-card border border-border rounded-lg p-6 space-y-3">
+                    <Skeleton className="h-5 w-1/3" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isError && (
+              <div className="bg-card border border-border rounded-lg p-6 text-center space-y-3">
+                <p className="text-sm text-muted-foreground">Unable to load conversations right now.</p>
+                <Button variant="outline" onClick={() => void refetch()}>
+                  Retry
+                </Button>
+              </div>
+            )}
+
+            {!isLoading && !isError && conversations.length === 0 ? (
               <div className="bg-card border border-border rounded-lg p-12 text-center">
                 <Mic className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                 <p className="text-muted-foreground">No conversations yet. Create one to get started!</p>
               </div>
-            ) : (
+            ) : null}
+
+            {!isLoading && !isError && conversations.length > 0 ? (
               <div className="grid gap-4">
                 {conversations.map((conv) => (
                   <motion.div
                     key={conv.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
+                    onClick={() => handleOpenConversation(conv.id)}
                     className="bg-card border border-border rounded-lg p-6 hover:border-primary/50 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {conv.title || "Untitled Conversation"}
-                        </h4>
+                      <div className="min-w-0 flex-1">
+                        {renameConversationId === conv.id ? (
+                          <div className="flex items-center gap-2 max-w-xl" onClick={(event) => event.stopPropagation()}>
+                            <Input
+                              value={renameTitle}
+                              onChange={(event) => setRenameTitle(event.target.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") {
+                                  saveRenameConversation(conv.id);
+                                }
+                                if (event.key === "Escape") {
+                                  setRenameConversationId(null);
+                                  setRenameTitle("");
+                                }
+                              }}
+                              disabled={renameConversationMutation.isPending}
+                              autoFocus
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => saveRenameConversation(conv.id)}
+                              disabled={renameConversationMutation.isPending}
+                              aria-label="Save title"
+                            >
+                              {renameConversationMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => {
+                                setRenameConversationId(null);
+                                setRenameTitle("");
+                              }}
+                              aria-label="Cancel rename"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                            {conv.title || "Untitled Conversation"}
+                          </h4>
+                        )}
                         <p className="text-sm text-muted-foreground mt-1">
                           {new Date(conv.createdAt).toLocaleDateString()} • {conv.language.toUpperCase()} • {conv.status}
                         </p>
                       </div>
-                      <Button variant="ghost" size="sm">
-                        Open
-                      </Button>
+                      <div className="flex items-center gap-1 ml-3" onClick={(event) => event.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => startRenameConversation(conv)}
+                          disabled={renameConversationMutation.isPending || deleteConversationMutation.isPending}
+                          aria-label="Rename conversation"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteTarget(conv)}
+                          disabled={deleteConversationMutation.isPending}
+                          aria-label="Delete conversation"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleOpenConversation(conv.id)}>
+                          {openingConversationId === conv.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Open"}
+                        </Button>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
               </div>
-            )}
+            ) : null}
           </div>
         </motion.div>
-      </main>
-    </div>
+      
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. "{deleteTarget?.title || "Untitled Conversation"}" will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteConversationMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteConversationMutation.isPending || !deleteTarget}
+              onClick={() => {
+                if (deleteTarget) {
+                  deleteConversationMutation.mutate(deleteTarget.id);
+                }
+              }}
+            >
+              {deleteConversationMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </DashboardShell>
   );
 };
 

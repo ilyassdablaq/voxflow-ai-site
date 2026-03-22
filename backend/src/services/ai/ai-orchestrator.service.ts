@@ -2,6 +2,25 @@ import { logger } from "../../config/logger.js";
 import { RagService } from "../rag/rag.service.js";
 import { ChatMessage, LlmGenerationResult, MockLlmProvider, ProviderSet, SttResult, TtsResult, createProviders } from "./providers.js";
 
+const EMPTY_MP3_BASE64 = "SUQzAwAAAAAA";
+
+function normalizeRole(role: "USER" | "ASSISTANT" | "SYSTEM"): ChatMessage["role"] {
+  if (role === "ASSISTANT") {
+    return "assistant";
+  }
+
+  if (role === "SYSTEM") {
+    return "system";
+  }
+
+  return "user";
+}
+
+function buildLanguageInstructions(language: string): string {
+  const normalized = language.toLowerCase();
+  return `Respond primarily in ${normalized}. Match the user's language when detected and keep tone natural. Provide complete, useful answers (typically 3-6 sentences unless user asks for brevity).`;
+}
+
 export class AiOrchestratorService {
   private readonly providers: ProviderSet;
 
@@ -9,19 +28,31 @@ export class AiOrchestratorService {
     this.providers = createProviders();
   }
 
-  async processVoiceTurn(input: { audioChunk: Buffer; language: string; syntheticEmbedding?: number[] }) {
+  async processVoiceTurn(input: {
+    audioChunk: Buffer;
+    language: string;
+    syntheticEmbedding?: number[];
+    history?: Array<{ role: "USER" | "ASSISTANT" | "SYSTEM"; content: string }>;
+  }) {
     const sttResult = await this.transcribe(input.audioChunk, input.language);
 
     const embedding = input.syntheticEmbedding ?? new Array<number>(1536).fill(0.001);
     const contexts = await this.ragService.retrieveContext(embedding, 3);
     const ragContext = this.ragService.buildPrompt(sttResult.text, contexts);
 
-    const llmResult = await this.generateText(ragContext, [
-      {
-        role: "user",
-        content: sttResult.text,
-      },
-    ]);
+    const llmMessages = input.history?.length
+      ? input.history.map((message) => ({
+          role: normalizeRole(message.role),
+          content: message.content,
+        }))
+      : [
+          {
+            role: "user" as const,
+            content: sttResult.text,
+          },
+        ];
+
+    const llmResult = await this.generateText(`${ragContext}\n\n${buildLanguageInstructions(input.language)}`, llmMessages);
 
     const ttsResult = await this.speak(llmResult.text, input.language);
 
@@ -40,17 +71,29 @@ export class AiOrchestratorService {
     };
   }
 
-  async processTextTurn(input: { text: string; language: string; syntheticEmbedding?: number[] }) {
+  async processTextTurn(input: {
+    text: string;
+    language: string;
+    syntheticEmbedding?: number[];
+    history?: Array<{ role: "USER" | "ASSISTANT" | "SYSTEM"; content: string }>;
+  }) {
     const embedding = input.syntheticEmbedding ?? new Array<number>(1536).fill(0.001);
     const contexts = await this.ragService.retrieveContext(embedding, 3);
     const ragContext = this.ragService.buildPrompt(input.text, contexts);
 
-    const llmResult = await this.generateText(ragContext, [
-      {
-        role: "user",
-        content: input.text,
-      },
-    ]);
+    const llmMessages = input.history?.length
+      ? input.history.map((message) => ({
+          role: normalizeRole(message.role),
+          content: message.content,
+        }))
+      : [
+          {
+            role: "user" as const,
+            content: input.text,
+          },
+        ];
+
+    const llmResult = await this.generateText(`${ragContext}\n\n${buildLanguageInstructions(input.language)}`, llmMessages);
 
     const ttsResult = await this.speak(llmResult.text, input.language);
 
@@ -69,23 +112,31 @@ export class AiOrchestratorService {
   }
 
   async streamTextTurn(
-    input: { text: string; language: string; syntheticEmbedding?: number[] },
+    input: {
+      text: string;
+      language: string;
+      syntheticEmbedding?: number[];
+      history?: Array<{ role: "USER" | "ASSISTANT" | "SYSTEM"; content: string }>;
+    },
     onToken: (token: string) => void,
   ) {
     const embedding = input.syntheticEmbedding ?? new Array<number>(1536).fill(0.001);
     const contexts = await this.ragService.retrieveContext(embedding, 3);
     const ragContext = this.ragService.buildPrompt(input.text, contexts);
 
-    const llmResult = await this.streamGenerateText(
-      ragContext,
-      [
-        {
-          role: "user",
-          content: input.text,
-        },
-      ],
-      onToken,
-    );
+    const llmMessages = input.history?.length
+      ? input.history.map((message) => ({
+          role: normalizeRole(message.role),
+          content: message.content,
+        }))
+      : [
+          {
+            role: "user" as const,
+            content: input.text,
+          },
+        ];
+
+    const llmResult = await this.streamGenerateText(`${ragContext}\n\n${buildLanguageInstructions(input.language)}`, llmMessages, onToken);
 
     const ttsResult = await this.speak(llmResult.text, input.language);
 
@@ -149,25 +200,49 @@ export class AiOrchestratorService {
     messages: ChatMessage[],
     onToken: (token: string) => void,
   ): Promise<LlmGenerationResult> {
-    if (this.providers.llm.streamResponse) {
-      return this.providers.llm.streamResponse(context, messages, onToken);
-    }
+    try {
+      if (this.providers.llm.streamResponse) {
+        return await this.providers.llm.streamResponse(context, messages, onToken);
+      }
 
-    const nonStream = await this.generateText(context, messages);
-    onToken(nonStream.text);
-    return nonStream;
+      const nonStream = await this.generateText(context, messages);
+      onToken(nonStream.text);
+      return nonStream;
+    } catch (error) {
+      logger.error({ error }, "Primary streaming LLM provider failed, falling back to mock provider");
+      const fallback = new MockLlmProvider();
+      const text = await fallback.generateResponse(context, messages);
+      onToken(text);
+      return {
+        text,
+        usage: {
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+        },
+      };
+    }
   }
 
   private async speak(text: string, language: string): Promise<TtsResult> {
-    if (this.providers.tts.speakWithMetadata) {
-      return this.providers.tts.speakWithMetadata(text, language);
-    }
+    try {
+      if (this.providers.tts.speakWithMetadata) {
+        return await this.providers.tts.speakWithMetadata(text, language);
+      }
 
-    const audioBuffer = await this.providers.tts.speak(text, language);
-    return {
-      audioBuffer,
-      durationSeconds: 0,
-      mimeType: "audio/mpeg",
-    };
+      const audioBuffer = await this.providers.tts.speak(text, language);
+      return {
+        audioBuffer,
+        durationSeconds: 0,
+        mimeType: "audio/mpeg",
+      };
+    } catch (error) {
+      logger.error({ error }, "Primary TTS provider failed, using silent fallback audio");
+      return {
+        audioBuffer: Buffer.from(EMPTY_MP3_BASE64, "base64"),
+        durationSeconds: 0,
+        mimeType: "audio/mpeg",
+      };
+    }
   }
 }

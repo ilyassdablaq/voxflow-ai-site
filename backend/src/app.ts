@@ -9,6 +9,7 @@ import { authRoutes } from "./modules/auth/auth.routes.js";
 import { contactRoutes } from "./modules/contact/contact.routes.js";
 import { planRoutes } from "./modules/plan/plan.routes.js";
 import { conversationRoutes } from "./modules/conversation/conversation.routes.js";
+import { integrationRoutes } from "./modules/integration/integration.routes.js";
 import { registerWebSocketGateway } from "./infra/ws/ws.gateway.js";
 import { ConversationRepository } from "./modules/conversation/conversation.repository.js";
 import { AiOrchestratorService } from "./services/ai/ai-orchestrator.service.js";
@@ -66,6 +67,7 @@ export async function buildApp() {
   await app.register(contactRoutes);
   await app.register(planRoutes);
   await app.register(conversationRoutes);
+  await app.register(integrationRoutes);
 
   registerWebSocketGateway(app, new AiOrchestratorService(new RagService()), new ConversationRepository());
 

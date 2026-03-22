@@ -10,12 +10,35 @@ const sampleMessages = [
   { role: "bot" as const, text: "Great choice! I've upgraded your account to the Pro plan. You'll now have access to unlimited voice minutes and priority support. Is there anything else?" },
 ];
 
+interface SpeechRecognitionResultLike {
+  transcript: string;
+}
+
+interface SpeechRecognitionEventLike extends Event {
+  results: ArrayLike<ArrayLike<SpeechRecognitionResultLike>>;
+}
+
+interface SpeechRecognitionLike extends EventTarget {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onend: (() => void) | null;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
 const VoiceDemoWidget = () => {
   const [messages, setMessages] = useState<typeof sampleMessages>([]);
   const [isListening, setIsListening] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [inputText, setInputText] = useState("");
+  const [voiceError, setVoiceError] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   useEffect(() => {
     if (currentIdx < sampleMessages.length) {
@@ -34,16 +57,84 @@ const VoiceDemoWidget = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    const speechSynthesisSupported = "speechSynthesis" in window;
+    const maybeRecognition = (window as Window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor })
+      .SpeechRecognition
+      ?? (window as Window & { webkitSpeechRecognition?: SpeechRecognitionConstructor }).webkitSpeechRecognition;
+
+    if (!maybeRecognition) {
+      setVoiceError("Speech recognition is not supported in this browser. Typing still works.");
+      return;
+    }
+
+    if (!speechSynthesisSupported) {
+      setVoiceError("Text-to-speech is not supported in this browser.");
+    }
+
+    const recognition = new maybeRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0]?.[0]?.transcript?.trim() ?? "";
+      if (transcript) {
+        setInputText(transcript);
+        setVoiceError("");
+      }
+    };
+
+    recognition.onerror = () => {
+      setVoiceError("Could not capture voice input. Please try again or type your message.");
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      recognition.stop();
+      recognitionRef.current = null;
+    };
+  }, []);
+
+  const speakText = (text: string) => {
+    if (!("speechSynthesis" in window)) {
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
+  };
+
   const handleSend = () => {
     if (!inputText.trim()) return;
     setMessages((prev) => [...prev, { role: "user", text: inputText }]);
     setInputText("");
     setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { role: "bot", text: "Thanks for your message! This is a demo — in a live setup, our AI would respond in real-time." },
-      ]);
+      const responseText = "Thanks for your message! This is a demo — in a live setup, our AI would respond in real-time.";
+      setMessages((prev) => [...prev, { role: "bot", text: responseText }]);
+      speakText(responseText);
     }, 1200);
+  };
+
+  const handleVoiceCapture = () => {
+    const recognition = recognitionRef.current;
+    if (!recognition) {
+      setVoiceError("Speech recognition is unavailable. Please type your message.");
+      return;
+    }
+
+    setVoiceError("");
+    setIsListening(true);
+    recognition.start();
   };
 
   return (
@@ -105,10 +196,8 @@ const VoiceDemoWidget = () => {
           variant="ghost"
           size="icon"
           className="shrink-0 text-primary hover:bg-primary/10"
-          onClick={() => {
-            setIsListening(!isListening);
-            setTimeout(() => setIsListening(false), 2000);
-          }}
+          onClick={handleVoiceCapture}
+          aria-label="Start voice input"
         >
           {isListening ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
         </Button>
@@ -120,12 +209,14 @@ const VoiceDemoWidget = () => {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            aria-label="Message input"
           />
         </div>
-        <Button size="icon" variant="ghost" className="shrink-0 text-primary" onClick={handleSend}>
+        <Button size="icon" variant="ghost" className="shrink-0 text-primary" onClick={handleSend} aria-label="Send message">
           <Send className="w-4 h-4" />
         </Button>
       </div>
+      {voiceError ? <div className="px-3 pb-3 text-xs text-muted-foreground">{voiceError}</div> : null}
     </div>
   );
 };

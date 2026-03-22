@@ -12,7 +12,14 @@ export async function registerSecurityPlugins(fastify: FastifyInstance): Promise
   });
 
   await fastify.register(cors, {
-    origin: [env.APP_ORIGIN],
+    origin: (origin, callback) => {
+      if (!origin || origin === env.APP_ORIGIN) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, true);
+    },
     credentials: true,
   });
 

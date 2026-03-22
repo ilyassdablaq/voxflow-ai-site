@@ -151,7 +151,8 @@ export class OpenAiLlmProvider implements LlmProvider {
   async generateResponseWithUsage(context: string, messages: ChatMessage[]): Promise<LlmGenerationResult> {
     const completion = await this.client.chat.completions.create({
       model: env.OPENAI_MODEL,
-      temperature: 0.3,
+      temperature: 0.6,
+      max_completion_tokens: 500,
       messages: [
         {
           role: "system",
@@ -183,7 +184,8 @@ export class OpenAiLlmProvider implements LlmProvider {
 
     const stream = await this.client.chat.completions.create({
       model: env.OPENAI_MODEL,
-      temperature: 0.3,
+      temperature: 0.6,
+      max_completion_tokens: 500,
       stream: true,
       stream_options: { include_usage: true },
       messages: [

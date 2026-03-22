@@ -1,6 +1,7 @@
 import { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import { ZodError } from "zod";
 import { AppError } from "../errors/app-error.js";
+import { logger } from "../../config/logger.js";
 
 export function errorHandler(error: FastifyError | Error, _request: FastifyRequest, reply: FastifyReply): void {
   if (error instanceof ZodError) {
@@ -24,6 +25,8 @@ export function errorHandler(error: FastifyError | Error, _request: FastifyReque
     });
     return;
   }
+
+  logger.error({ error }, "Unhandled server error");
 
   reply.status(500).send({
     error: {

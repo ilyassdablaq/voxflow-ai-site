@@ -35,6 +35,14 @@ VoxAI is a comprehensive platform that combines advanced speech-to-text, natural
 - 🔄 Interactive voice demo widget
 - 📊 Beautiful pricing and feature comparisons
 
+### Recent Production Hardening Improvements
+- ✅ Centralized API client with automatic token refresh retry on `401`
+- ✅ Dashboard migrated to TanStack Query for cache + resilient state handling
+- ✅ App-wide React Error Boundary with recovery UI
+- ✅ Improved loading, error, and retry states in authenticated dashboard views
+- ✅ Improved auth form accessibility (`label`/`htmlFor`) and stronger signup password validation
+- ✅ Voice demo fallback behavior for browsers without speech recognition/TTS
+
 ## 🛠 Tech Stack
 
 ### Frontend
@@ -61,15 +69,14 @@ VoxAI is a comprehensive platform that combines advanced speech-to-text, natural
 ### Development Tools
 - **ESLint** – Code linting
 - **TypeScript ESLint** – TypeScript linting
-- **Playwright** – E2E testing
 - **Vitest** 3.2 – Unit testing
 - **PostCSS & Autoprefixer** – CSS processing
 
 ## 📦 Installation
 
 ### Prerequisites
-- **Node.js** 18+ or **Bun** 1.0+
-- npm, yarn, pnpm, or bun package manager
+- **Node.js** 18+
+- npm package manager
 
 ### Setup Steps
 
@@ -81,11 +88,7 @@ VoxAI is a comprehensive platform that combines advanced speech-to-text, natural
 
 2. **Install dependencies**
    ```bash
-   # Using npm
    npm install
-   
-   # Or using bun
-   bun install
    ```
 
 3. **Start the development server**
@@ -93,6 +96,12 @@ VoxAI is a comprehensive platform that combines advanced speech-to-text, natural
    npm run dev
    ```
    The application will be available at `http://localhost:8081/`
+
+4. **Configure frontend API target (required for dashboard/auth)**
+  ```bash
+  # .env.local
+  VITE_API_URL=http://localhost:4000
+  ```
 
 ## 🚀 Running the Project
 
@@ -128,6 +137,15 @@ npm run test
 # Watch mode
 npm run test:watch
 ```
+
+Includes API client resilience tests in `src/test/api-client.test.ts`.
+
+## 🧪 Developer Notes
+
+- Dashboard requires backend `GET /api/conversations` and authenticated JWT calls.
+- API integration is centralized in `src/lib/api-client.ts`; avoid direct `fetch` calls for authenticated endpoints.
+- Auth refresh flow is implemented in `src/services/auth.service.ts` and reused automatically by `apiClient`.
+- Current lint output includes existing baseline issues in generated UI helper files; functional tests/build pass.
 
 ## 📁 Project Structure
 

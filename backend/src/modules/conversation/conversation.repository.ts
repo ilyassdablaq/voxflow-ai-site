@@ -46,4 +46,60 @@ export class ConversationRepository {
       },
     });
   }
+
+  async getRecentMessages(conversationId: string, limit: number) {
+    const recent = await prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        role: true,
+        content: true,
+        createdAt: true,
+      },
+    });
+
+    return recent.reverse();
+  }
+
+  async listConversations(userId: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    return prisma.conversation.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        userId: true,
+        title: true,
+        language: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  async deleteConversation(id: string, userId: string) {
+    return prisma.conversation.deleteMany({
+      where: {
+        id,
+        userId,
+      },
+    });
+  }
+
+  async updateConversationTitle(id: string, userId: string, title: string) {
+    return prisma.conversation.updateMany({
+      where: {
+        id,
+        userId,
+      },
+      data: {
+        title,
+      },
+    });
+  }
 }

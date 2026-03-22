@@ -95,10 +95,13 @@ const SignIn = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                   <Input
+                    id="email"
                     type="email"
                     name="email"
                     placeholder="you@example.com"
@@ -113,7 +116,9 @@ const SignIn = () => {
               {/* Password */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Password</label>
+                  <label htmlFor="password" className="text-sm font-medium">
+                    Password
+                  </label>
                   <Link to="#" className="text-xs text-primary hover:underline">
                     Forgot password?
                   </Link>
@@ -121,6 +126,7 @@ const SignIn = () => {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                   <Input
+                    id="password"
                     type="password"
                     name="password"
                     placeholder="••••••••"

@@ -44,6 +44,10 @@ const SignUp = () => {
       setError("Password must be at least 8 characters");
       return false;
     }
+    if (!/[A-Z]/.test(formData.password) || !/[a-z]/.test(formData.password) || !/[0-9]/.test(formData.password)) {
+      setError("Password must include uppercase, lowercase, and a number");
+      return false;
+    }
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return false;
@@ -105,10 +109,13 @@ const SignUp = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Full Name */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Full Name</label>
+                <label htmlFor="fullName" className="text-sm font-medium">
+                  Full Name
+                </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                   <Input
+                    id="fullName"
                     type="text"
                     name="fullName"
                     placeholder="John Doe"
@@ -122,10 +129,13 @@ const SignUp = () => {
 
               {/* Email */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                   <Input
+                    id="email"
                     type="email"
                     name="email"
                     placeholder="you@example.com"
@@ -139,10 +149,13 @@ const SignUp = () => {
 
               {/* Password */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
+                <label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                   <Input
+                    id="password"
                     type="password"
                     name="password"
                     placeholder="••••••••"
@@ -156,10 +169,13 @@ const SignUp = () => {
 
               {/* Confirm Password */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Confirm Password</label>
+                <label htmlFor="confirmPassword" className="text-sm font-medium">
+                  Confirm Password
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                   <Input
+                    id="confirmPassword"
                     type="password"
                     name="confirmPassword"
                     placeholder="••••••••"

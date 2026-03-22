@@ -9,8 +9,56 @@ export function registerWebSocketGateway(
   aiOrchestratorService: AiOrchestratorService,
   conversationRepository: ConversationRepository,
 ): void {
-  fastify.get("/ws/conversations/:id", { websocket: true }, (socket, request) => {
+  fastify.get("/ws/conversations/:id", { websocket: true }, async (socket, request) => {
+    const typedSocket = socket as WebSocket;
     const { id: conversationId } = request.params as { id: string };
+    const heartbeatInterval = setInterval(() => {
+      if (typedSocket.readyState === WebSocket.OPEN) {
+        typedSocket.ping();
+      }
+    }, 25000);
+
+    typedSocket.on("close", () => {
+      clearInterval(heartbeatInterval);
+    });
+
+    try {
+      const query = request.query as { token?: string };
+      const authHeader = request.headers.authorization;
+
+      if (!authHeader && query?.token) {
+        request.headers.authorization = `Bearer ${query.token}`;
+      }
+
+      await request.jwtVerify();
+
+      const user = request.user as { sub: string };
+      const conversation = await conversationRepository.getConversationById(conversationId);
+
+      if (!conversation || conversation.userId !== user.sub) {
+        typedSocket.send(
+          JSON.stringify({
+            type: "error",
+            error: {
+              message: "Unauthorized conversation access",
+            },
+          }),
+        );
+        typedSocket.close(1008, "Unauthorized");
+        return;
+      }
+    } catch {
+      typedSocket.send(
+        JSON.stringify({
+          type: "error",
+          error: {
+            message: "Authentication failed",
+          },
+        }),
+      );
+      typedSocket.close(1008, "Authentication failed");
+      return;
+    }
 
     socket.on("message", async (message: RawData) => {
       try {
@@ -31,10 +79,16 @@ export function registerWebSocketGateway(
             content: payload.data,
           });
 
+          const conversationHistory = await conversationRepository.getRecentMessages(conversationId, 20);
+
           const ai = await aiOrchestratorService.streamTextTurn(
             {
               text: payload.data,
               language: payload.language ?? "en",
+              history: conversationHistory.map((message) => ({
+                role: message.role,
+                content: message.content,
+              })),
             },
             (token) => {
               socket.send(
@@ -46,7 +100,7 @@ export function registerWebSocketGateway(
             },
           );
 
-          await conversationRepository.createMessage({
+          const assistantMessage = await conversationRepository.createMessage({
             conversationId,
             role: "ASSISTANT",
             content: ai.responseText,
@@ -58,7 +112,9 @@ export function registerWebSocketGateway(
             JSON.stringify({
               type: "assistant_response",
               data: {
+                id: assistantMessage.id,
                 text: ai.responseText,
+                createdAt: assistantMessage.createdAt,
                 audioBase64: ai.audioBase64,
                 audioMimeType: ai.audioMimeType,
                 tokenCount: ai.tokenCount,
@@ -81,7 +137,7 @@ export function registerWebSocketGateway(
           content: ai.transcript,
         });
 
-        await conversationRepository.createMessage({
+        const assistantMessage = await conversationRepository.createMessage({
           conversationId,
           role: "ASSISTANT",
           content: ai.responseText,
@@ -99,7 +155,9 @@ export function registerWebSocketGateway(
           JSON.stringify({
             type: "assistant_response",
             data: {
+                id: assistantMessage.id,
               text: ai.responseText,
+                createdAt: assistantMessage.createdAt,
               audioBase64: ai.audioBase64,
               audioMimeType: ai.audioMimeType,
               tokenCount: ai.tokenCount,
@@ -110,7 +168,6 @@ export function registerWebSocketGateway(
           }),
         );
       } catch (error) {
-        const typedSocket = socket as WebSocket;
         typedSocket.send(
           JSON.stringify({
             type: "error",

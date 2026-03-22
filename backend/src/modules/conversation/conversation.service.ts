@@ -2,7 +2,7 @@ import { AppError } from "../../common/errors/app-error.js";
 import { AiOrchestratorService } from "../../services/ai/ai-orchestrator.service.js";
 import { UsageService } from "../billing/usage.service.js";
 import { ConversationRepository } from "./conversation.repository.js";
-import { CreateConversationInput } from "./conversation.schemas.js";
+import { CreateConversationInput, UpdateConversationInput } from "./conversation.schemas.js";
 import { aiTasksQueue, transcriptionQueue, webhookQueue } from "../../infra/queue/queues.js";
 
 export class ConversationService {
@@ -28,9 +28,15 @@ export class ConversationService {
         content: payload.initialMessage,
       });
 
+      const conversationHistory = await this.repository.getRecentMessages(conversation.id, 20);
+
       const ai = await this.aiOrchestratorService.processTextTurn({
         text: payload.initialMessage,
         language: payload.language,
+        history: conversationHistory.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
       });
 
       await this.repository.createMessage({
@@ -75,5 +81,23 @@ export class ConversationService {
     }
 
     return this.repository.getMessages(conversationId);
+  }
+
+  async listConversations(userId: string, page: number, limit: number) {
+    return this.repository.listConversations(userId, page, limit);
+  }
+
+  async deleteConversation(conversationId: string, userId: string) {
+    const result = await this.repository.deleteConversation(conversationId, userId);
+    if (result.count === 0) {
+      throw new AppError(404, "CONVERSATION_NOT_FOUND", "Conversation not found");
+    }
+  }
+
+  async renameConversation(conversationId: string, userId: string, payload: UpdateConversationInput) {
+    const result = await this.repository.updateConversationTitle(conversationId, userId, payload.title);
+    if (result.count === 0) {
+      throw new AppError(404, "CONVERSATION_NOT_FOUND", "Conversation not found");
+    }
   }
 }
