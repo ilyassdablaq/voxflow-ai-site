@@ -284,8 +284,26 @@ export class RagService {
         // Remove script, style, and non-content elements
         $("script, style, noscript, meta, link, svg, iframe, image, picture").remove();
 
-        // Extract all visible text content more comprehensively
-        const pageText = normalizeWhitespace($("body").text());
+                // Extract text from common content containers
+                let pageText = "";
+                const contentContainers = ["main", "article", "[role=main]", ".content", "#content", ".post-content", ".page-content"];
+        
+                // Try to find content in semantic containers first
+                for (const selector of contentContainers) {
+                  const containerText = normalizeWhitespace($(selector).text());
+                  if (containerText && containerText.length > 50) {
+                    pageText = containerText;
+                    break;
+                  }
+                }
+        
+                // Fallback: if no semantic container found, get all text from body
+                if (!pageText || pageText.length < 50) {
+                  pageText = normalizeWhitespace($("body").text());
+                }
+
+                // Log extracted text length for debugging
+                logger.debug({ url: currentUrl, textLength: pageText.length, hasText: pageText.length > 0 }, "RAG crawl page text extracted");
 
         if (pageText && pageText.length > 20) {
           collectedPages.push({
