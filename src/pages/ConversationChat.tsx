@@ -18,6 +18,13 @@ const SUPPORTED_LANGUAGES = [
   { code: "ar", label: "العربية" },
 ];
 
+const LANGUAGE_LOCALE_MAP: Record<string, string> = {
+  en: "en-US",
+  de: "de-DE",
+  fr: "fr-FR",
+  ar: "ar-SA",
+};
+
 interface ChatMessage {
   id: string;
   role: "USER" | "ASSISTANT" | "SYSTEM";
@@ -98,6 +105,12 @@ export default function ConversationChat() {
   }, [streamedAssistantText]);
 
   useEffect(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.lang = LANGUAGE_LOCALE_MAP[selectedLanguage] ?? "en-US";
+    }
+  }, [selectedLanguage]);
+
+  useEffect(() => {
     const recognitionCtor = (
       window as typeof window & {
         SpeechRecognition?: BrowserSpeechRecognitionConstructor;
@@ -120,7 +133,7 @@ export default function ConversationChat() {
     const recognition = new recognitionCtor();
     recognition.continuous = false;
     recognition.interimResults = true;
-    recognition.lang = "en-US";
+    recognition.lang = LANGUAGE_LOCALE_MAP[selectedLanguage] ?? "en-US";
 
     recognition.onresult = (event) => {
       const transcript = Array.from(event.results)
@@ -152,7 +165,7 @@ export default function ConversationChat() {
       recognition.stop();
       recognitionRef.current = null;
     };
-  }, [toast]);
+  }, [selectedLanguage, toast]);
 
   useEffect(() => {
     if (!id) {

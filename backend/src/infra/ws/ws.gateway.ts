@@ -12,6 +12,7 @@ export function registerWebSocketGateway(
   fastify.get("/ws/conversations/:id", { websocket: true }, async (socket, request) => {
     const typedSocket = socket as WebSocket;
     const { id: conversationId } = request.params as { id: string };
+    let authenticatedUserId: string | null = null;
     const heartbeatInterval = setInterval(() => {
       if (typedSocket.readyState === WebSocket.OPEN) {
         typedSocket.ping();
@@ -33,6 +34,7 @@ export function registerWebSocketGateway(
       await request.jwtVerify();
 
       const user = request.user as { sub: string };
+        authenticatedUserId = user.sub;
       const conversation = await conversationRepository.getConversationById(conversationId);
 
       if (!conversation || conversation.userId !== user.sub) {
@@ -73,6 +75,10 @@ export function registerWebSocketGateway(
         }
 
         if (payload.type === "text_message") {
+          if (!authenticatedUserId) {
+            throw new AppError(401, "UNAUTHORIZED", "Authentication failed");
+          }
+
           await conversationRepository.createMessage({
             conversationId,
             role: "USER",
@@ -83,6 +89,7 @@ export function registerWebSocketGateway(
 
           const ai = await aiOrchestratorService.streamTextTurn(
             {
+              userId: authenticatedUserId,
               text: payload.data,
               language: payload.language ?? "en",
               history: conversationHistory.map((message) => ({
@@ -126,7 +133,12 @@ export function registerWebSocketGateway(
           return;
         }
 
+        if (!authenticatedUserId) {
+          throw new AppError(401, "UNAUTHORIZED", "Authentication failed");
+        }
+
         const ai = await aiOrchestratorService.processVoiceTurn({
+          userId: authenticatedUserId,
           audioChunk: Buffer.from(payload.data, "base64"),
           language: payload.language ?? "en",
         });

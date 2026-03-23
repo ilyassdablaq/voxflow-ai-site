@@ -8,7 +8,7 @@ export class UsageService {
 
   async enforcePlanLimits(userId: string): Promise<void> {
     const activeSubscription = await prisma.subscription.findFirst({
-      where: { userId, isActive: true },
+      where: { userId, status: "ACTIVE" },
       include: { plan: true },
       orderBy: { startsAt: "desc" },
     });

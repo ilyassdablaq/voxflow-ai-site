@@ -31,6 +31,7 @@ export class ConversationService {
       const conversationHistory = await this.repository.getRecentMessages(conversation.id, 20);
 
       const ai = await this.aiOrchestratorService.processTextTurn({
+        userId,
         text: payload.initialMessage,
         language: payload.language,
         history: conversationHistory.map((message) => ({

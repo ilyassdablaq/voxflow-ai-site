@@ -9,10 +9,13 @@ export class PlanService {
   }
 
   async getCurrentSubscription(userId: string) {
+    await this.repository.ensureDefaultFreePlanSubscription(userId);
     return this.repository.getCurrentSubscription(userId);
   }
 
   async changePlan(userId: string, planKey: string) {
+    await this.repository.ensureDefaultFreePlanSubscription(userId);
+
     const plan = await this.repository.getPlanByKey(planKey);
     if (!plan) {
       throw new AppError(404, "PLAN_NOT_FOUND", "Plan not found");

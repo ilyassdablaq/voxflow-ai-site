@@ -29,6 +29,7 @@ export class AiOrchestratorService {
   }
 
   async processVoiceTurn(input: {
+    userId: string;
     audioChunk: Buffer;
     language: string;
     syntheticEmbedding?: number[];
@@ -36,8 +37,7 @@ export class AiOrchestratorService {
   }) {
     const sttResult = await this.transcribe(input.audioChunk, input.language);
 
-    const embedding = input.syntheticEmbedding ?? new Array<number>(1536).fill(0.001);
-    const contexts = await this.ragService.retrieveContext(embedding, 3);
+    const contexts = await this.ragService.retrieveContext(input.userId, sttResult.text, 3);
     const ragContext = this.ragService.buildPrompt(sttResult.text, contexts);
 
     const llmMessages = input.history?.length
@@ -72,13 +72,13 @@ export class AiOrchestratorService {
   }
 
   async processTextTurn(input: {
+    userId: string;
     text: string;
     language: string;
     syntheticEmbedding?: number[];
     history?: Array<{ role: "USER" | "ASSISTANT" | "SYSTEM"; content: string }>;
   }) {
-    const embedding = input.syntheticEmbedding ?? new Array<number>(1536).fill(0.001);
-    const contexts = await this.ragService.retrieveContext(embedding, 3);
+    const contexts = await this.ragService.retrieveContext(input.userId, input.text, 3);
     const ragContext = this.ragService.buildPrompt(input.text, contexts);
 
     const llmMessages = input.history?.length
@@ -113,6 +113,7 @@ export class AiOrchestratorService {
 
   async streamTextTurn(
     input: {
+      userId: string;
       text: string;
       language: string;
       syntheticEmbedding?: number[];
@@ -120,8 +121,7 @@ export class AiOrchestratorService {
     },
     onToken: (token: string) => void,
   ) {
-    const embedding = input.syntheticEmbedding ?? new Array<number>(1536).fill(0.001);
-    const contexts = await this.ragService.retrieveContext(embedding, 3);
+    const contexts = await this.ragService.retrieveContext(input.userId, input.text, 3);
     const ragContext = this.ragService.buildPrompt(input.text, contexts);
 
     const llmMessages = input.history?.length

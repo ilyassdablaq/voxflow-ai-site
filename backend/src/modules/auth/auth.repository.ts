@@ -10,7 +10,29 @@ export class AuthRepository {
   }
 
   async createUser(data: { email: string; passwordHash: string; fullName: string; role?: "USER" | "ADMIN" }) {
-    return prisma.user.create({ data });
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({ data });
+
+      const freePlan = await tx.plan.findFirst({
+        where: {
+          key: "free",
+          isActive: true,
+        },
+        select: { id: true },
+      });
+
+      if (freePlan) {
+        await tx.subscription.create({
+          data: {
+            userId: user.id,
+            planId: freePlan.id,
+            status: "ACTIVE",
+          },
+        });
+      }
+
+      return user;
+    });
   }
 
   async createRefreshToken(data: { tokenHash: string; userId: string; expiresAt: Date }): Promise<void> {

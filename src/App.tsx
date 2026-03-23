@@ -4,15 +4,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import Index from "./pages/Index";
+import Index from "./pages/Index.tsx";
 import Features from "./pages/Features";
 import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
-import ApiDocs from "./pages/ApiDocs";
 import Contact from "./pages/Contact";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import Dashboard from "./pages/Dashboard";
+import DataSources from "./pages/DataSources";
 import ConversationChat from "./pages/ConversationChat";
 import Subscriptions from "./pages/Subscriptions";
 import Integrations from "./pages/Integrations";
@@ -29,7 +29,6 @@ const App = () => (
           <Route path="/features" element={<Features />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/pricing" element={<Pricing />} />
-          <Route path="/api" element={<ApiDocs />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/sign-up" element={<SignUp />} />
           <Route path="/sign-in" element={<SignIn />} />
@@ -38,6 +37,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/data-sources"
+            element={
+              <ProtectedRoute>
+                <DataSources />
               </ProtectedRoute>
             }
           />

@@ -20,7 +20,7 @@ export class PlanRepository {
 
   async getCurrentSubscription(userId: string) {
     return prisma.subscription.findFirst({
-      where: { userId, isActive: true },
+      where: { userId, status: "ACTIVE" },
       include: {
         plan: {
           select: {
@@ -58,8 +58,8 @@ export class PlanRepository {
   async activatePlanForUser(userId: string, planId: string) {
     return prisma.$transaction(async (tx) => {
       await tx.subscription.updateMany({
-        where: { userId, isActive: true },
-        data: { isActive: false, endsAt: new Date() },
+        where: { userId, status: "ACTIVE" },
+        data: { status: "INACTIVE", endsAt: new Date() },
       });
 
       return tx.subscription.create({
@@ -67,9 +67,40 @@ export class PlanRepository {
           userId,
           planId,
           startsAt: new Date(),
-          isActive: true,
+          status: "ACTIVE",
         },
       });
+    });
+  }
+
+  async ensureDefaultFreePlanSubscription(userId: string) {
+    const existingActive = await prisma.subscription.findFirst({
+      where: { userId, status: "ACTIVE" },
+      select: { id: true },
+    });
+
+    if (existingActive) {
+      return;
+    }
+
+    const freePlan = await prisma.plan.findFirst({
+      where: {
+        key: "free",
+        isActive: true,
+      },
+      select: { id: true },
+    });
+
+    if (!freePlan) {
+      return;
+    }
+
+    await prisma.subscription.create({
+      data: {
+        userId,
+        planId: freePlan.id,
+        status: "ACTIVE",
+      },
     });
   }
 }

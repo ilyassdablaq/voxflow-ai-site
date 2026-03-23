@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { CreditCard, LayoutDashboard, Link as LinkIcon, LogOut, Mic } from "lucide-react";
+import { CreditCard, Database, LayoutDashboard, Link as LinkIcon, LogOut, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { authService } from "@/services/auth.service";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ interface DashboardShellProps {
 
 const navItems = [
   { to: "/dashboard", label: "Conversations", icon: LayoutDashboard },
+  { to: "/dashboard/data-sources", label: "Data Sources", icon: Database },
   { to: "/dashboard/subscriptions", label: "Subscriptions", icon: CreditCard },
   { to: "/dashboard/integrations", label: "Integrations", icon: LinkIcon },
 ];

@@ -41,16 +41,17 @@ const Dashboard = () => {
   const createConversationMutation = useMutation({
     mutationFn: (title: string) =>
       conversationService.createConversation({
-        title,
+        title: title || "New Conversation",
         language: newConversationLanguage,
       }),
-    onSuccess: () => {
+    onSuccess: (conversation) => {
       setNewTitle("");
       void queryClient.invalidateQueries({ queryKey: ["conversations"] });
       toast({
         title: "Success",
         description: "Conversation created!",
       });
+      navigate(`/conversation/${conversation.id}`);
     },
     onError: (error) => {
       toast({
@@ -101,15 +102,6 @@ const Dashboard = () => {
   });
 
   const handleCreateConversation = () => {
-    if (!newTitle.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a conversation title",
-        variant: "destructive",
-      });
-      return;
-    }
-
     createConversationMutation.mutate(newTitle.trim());
   };
 
@@ -149,7 +141,7 @@ const Dashboard = () => {
             <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 type="text"
-                placeholder="Enter conversation title..."
+                placeholder="Enter conversation title (optional)..."
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 aria-label="Conversation title"

@@ -52,6 +52,7 @@ export class IntegrationService {
 
     const conversationHistory = await this.conversationRepository.getRecentMessages(conversationId, 20);
     const ai = await this.aiOrchestratorService.processTextTurn({
+      userId: integration.userId,
       text: payload.message,
       language: payload.language ?? integration.language,
       history: conversationHistory.map((message) => ({

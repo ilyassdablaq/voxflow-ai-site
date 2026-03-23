@@ -15,9 +15,9 @@ export interface CurrentSubscription {
   id: string;
   userId: string;
   planId: string;
+  status: "ACTIVE" | "INACTIVE" | "CANCELED" | "EXPIRED";
   startsAt: string;
   endsAt: string | null;
-  isActive: boolean;
   plan: Plan;
 }
 
