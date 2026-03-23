@@ -24,7 +24,7 @@ const Footer = () => (
           <div className="space-y-2 text-sm text-muted-foreground">
             <Link to="/features" className="block hover:text-foreground transition-colors">Features</Link>
             <Link to="/pricing" className="block hover:text-foreground transition-colors">Pricing</Link>
-            <Link to="/api" className="block hover:text-foreground transition-colors">API Docs</Link>
+            <Link to="/faq" className="block hover:text-foreground transition-colors">FAQ & Docs</Link>
           </div>
         </div>
 
