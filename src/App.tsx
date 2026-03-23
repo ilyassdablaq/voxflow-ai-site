@@ -9,6 +9,7 @@ import Features from "./pages/Features";
 import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
+import Faq from "./pages/Faq";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import Dashboard from "./pages/Dashboard";
@@ -20,6 +21,7 @@ import Workflows from "./pages/Workflows";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import VoiceSettings from "./pages/VoiceSettings";
 import DeveloperPortal from "./pages/DeveloperPortal";
+import DashboardFaq from "./pages/DashboardFaq";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -33,6 +35,7 @@ const App = () => (
           <Route path="/features" element={<Features />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/faq" element={<Faq />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/sign-up" element={<SignUp />} />
           <Route path="/sign-in" element={<SignIn />} />
@@ -97,6 +100,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <DeveloperPortal />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/faq"
+            element={
+              <ProtectedRoute>
+                <DashboardFaq />
               </ProtectedRoute>
             }
           />

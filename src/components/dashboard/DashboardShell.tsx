@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   BarChart3,
   Bot,
+  CircleHelp,
   CreditCard,
   Database,
   GitBranch,
@@ -31,6 +32,7 @@ const navItems = [
   { to: "/dashboard/developer", label: "Developer", icon: KeyRound },
   { to: "/dashboard/subscriptions", label: "Subscriptions", icon: CreditCard },
   { to: "/dashboard/integrations", label: "Integrations", icon: LinkIcon },
+  { to: "/dashboard/faq", label: "Help / FAQ", icon: CircleHelp },
 ];
 
 export function DashboardShell({ title, description, children }: DashboardShellProps) {
