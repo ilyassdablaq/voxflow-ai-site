@@ -2,7 +2,7 @@
 
 A modern, production-ready landing page for VoxAI, a conversational AI platform that enables businesses to build intelligent voice bots for customer support, automation, and productivity.
 
-## 📋 Overview
+##  Overview
 
 VoxAI is a comprehensive platform that combines advanced speech-to-text, natural language understanding, and text-to-speech technologies to deliver real-time, human-like conversational experiences. This repository contains the marketing website and documentation portal built with modern web technologies.
 
@@ -15,7 +15,7 @@ VoxAI is a comprehensive platform that combines advanced speech-to-text, natural
 - **Easy Integration**: RESTful API and WebSocket support for seamless implementation
 - **Analytics Dashboard**: Real-time insights into conversations and performance metrics
 
-## ✨ Features
+##  Features
 
 ### Platform Features
 - ✅ Real-Time Speech-to-Text with 30+ language support
@@ -27,13 +27,13 @@ VoxAI is a comprehensive platform that combines advanced speech-to-text, natural
 - ✅ Enterprise-grade security and compliance
 
 ### Website Features
-- 🎨 Modern, responsive UI built with Tailwind CSS
-- ⚡ Fast performance with Vite and React 18
-- 🎬 Smooth animations with Framer Motion
-- 📱 Mobile-first design
-- ♿ Accessible component library (shadcn/ui)
-- 🔄 Interactive voice demo widget
-- 📊 Beautiful pricing and feature comparisons
+-  Modern, responsive UI built with Tailwind CSS
+-  Fast performance with Vite and React 18
+-  Smooth animations with Framer Motion
+-  Mobile-first design
+-  Accessible component library (shadcn/ui)
+-  Interactive voice demo widget
+-  Beautiful pricing and feature comparisons
 
 ### Recent Production Hardening Improvements
 - ✅ Centralized API client with automatic token refresh retry on `401`
@@ -43,7 +43,7 @@ VoxAI is a comprehensive platform that combines advanced speech-to-text, natural
 - ✅ Improved auth form accessibility (`label`/`htmlFor`) and stronger signup password validation
 - ✅ Voice demo fallback behavior for browsers without speech recognition/TTS
 
-## 🛠 Tech Stack
+##   Tech Stack
 
 ### Frontend
 - **React** 18.3 – UI library
@@ -72,7 +72,7 @@ VoxAI is a comprehensive platform that combines advanced speech-to-text, natural
 - **Vitest** 3.2 – Unit testing
 - **PostCSS & Autoprefixer** – CSS processing
 
-## 📦 Installation
+##  Installation
 
 ### Prerequisites
 - **Node.js** 18+
@@ -103,7 +103,7 @@ VoxAI is a comprehensive platform that combines advanced speech-to-text, natural
   VITE_API_URL=http://localhost:4000
   ```
 
-## 🚀 Running the Project
+##   Running the Project
 
 ### Development Mode
 ```bash
@@ -147,40 +147,7 @@ Includes API client resilience tests in `src/test/api-client.test.ts`.
 - Auth refresh flow is implemented in `src/services/auth.service.ts` and reused automatically by `apiClient`.
 - Current lint output includes existing baseline issues in generated UI helper files; functional tests/build pass.
 
-## 📁 Project Structure
 
-```
-voxai-website/
-├── src/
-│   ├── components/          # Reusable React components
-│   │   ├── ui/             # shadcn/ui components
-│   │   ├── Navbar.tsx      # Navigation bar
-│   │   ├── Footer.tsx      # Footer
-│   │   ├── VoiceDemoWidget.tsx   # Interactive demo
-│   │   ├── SectionHeading.tsx    # Common section header
-│   │   └── ...
-│   ├── pages/              # Page components
-│   │   ├── Index.tsx       # Home page
-│   │   ├── Features.tsx    # Features page
-│   │   ├── HowItWorks.tsx  # How it works
-│   │   ├── Pricing.tsx     # Pricing plans
-│   │   ├── ApiDocs.tsx     # API documentation
-│   │   ├── Contact.tsx     # Contact form
-│   │   └── NotFound.tsx    # 404 page
-│   ├── hooks/              # Custom React hooks
-│   ├── lib/                # Utilities
-│   ├── test/               # Tests
-│   ├── App.tsx            # Root component
-│   ├── main.tsx           # Entry point
-│   ├── App.css            # Global styles
-│   └── index.css          # Tailwind directives
-├── public/                 # Static assets
-├── vite.config.ts         # Vite configuration
-├── tailwind.config.ts     # Tailwind CSS configuration
-├── tsconfig.json          # TypeScript configuration
-├── eslint.config.js       # ESLint configuration
-└── package.json           # Dependencies and scripts
-```
 
 ### Key Directories
 
@@ -190,7 +157,7 @@ voxai-website/
 - **`src/lib`** – Utility functions and helpers
 - **`src/test`** – Test files for components and logic
 
-## 🎨 Styling & Design
+##  Styling & Design
 
 ### Tailwind CSS
 The project uses Tailwind CSS for styling with a custom color scheme:
@@ -207,7 +174,7 @@ The project uses Tailwind CSS for styling with a custom color scheme:
 - `.section-padding` – Consistent padding
 - `.font-heading` – Custom heading font (Space Grotesk)
 
-## 🔗 Available Routes
+##  Available Routes
 
 | Route | Description |
 |-------|-------------|
@@ -221,7 +188,7 @@ The project uses Tailwind CSS for styling with a custom color scheme:
 
 
 
-## 🧩 Component Examples
+##  Component Examples
 
 ### Using shadcn/ui Components
 
@@ -257,7 +224,7 @@ export default function CustomCard() {
 }
 ```
 
-## 🎯 Common Development Tasks
+##  Common Development Tasks
 
 ### Adding a New Page
 
@@ -297,7 +264,7 @@ import { Mic, Zap, Globe } from "lucide-react";
 
 See [Lucide React docs](https://lucide.dev) for available icons.
 
-## 🔍 Build & Deployment
+##  Build & Deployment
 
 ### Build for Production
 
@@ -307,7 +274,7 @@ npm run build
 
 This creates a `dist/` folder with optimized files ready for deployment.
 
-### Deploy to Vercel (Recommended)
+### Deploy to Vercel
 
 1. Push code to GitHub
 2. Connect repository to Vercel
@@ -328,7 +295,7 @@ EXPOSE 3000
 CMD ["npm", "run", "preview"]
 ```
 
-## 📊 Performance Optimization
+##  Performance Optimization
 
 - ✅ Code splitting via Vite
 - ✅ Lazy-loaded routes with React Router
@@ -337,7 +304,7 @@ CMD ["npm", "run", "preview"]
 - ✅ Minified production builds
 - ✅ Caching strategies for assets
 
-## 🐛 Debugging & Troubleshooting
+##  Debugging & Troubleshooting
 
 ### Dev Server Won't Start
 ```bash
@@ -359,7 +326,7 @@ Edit `vite.config.ts` to change the port:
 server: { port: 3001 }
 ```
 
-## 📚 Additional Resources
+##  Additional Resources
 
 - [React Documentation](https://react.dev)
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
@@ -370,7 +337,7 @@ server: { port: 3001 }
 
 ## 📄 License
 
-This project is proprietary. All rights reserved.
+This project is proprietary. You can self-host, use, and modify it, but you cannot sell the software itself or offer paid hosted/support services whose value substantially comes from VoxAi. All rights reserved.
 
 ## 👥 Contributing
 
