@@ -335,11 +335,11 @@ server: { port: 3001 }
 - [shadcn/ui Components](https://ui.shadcn.com/)
 - [Framer Motion](https://www.framer.com/motion/)
 
-## 📄 License
+##  License
 
 This project is proprietary. You can self-host, use, and modify it, but you cannot sell the software itself or offer paid hosted/support services whose value substantially comes from VoxAi. All rights reserved.
 
-## 👥 Contributing
+##  Contributing
 
 For internal contributions, follow these guidelines:
 1. Create a feature branch
