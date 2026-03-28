@@ -140,7 +140,7 @@ npm run test:watch
 
 Includes API client resilience tests in `src/test/api-client.test.ts`.
 
-## 🧪 Developer Notes
+##  Developer Notes
 
 - Dashboard requires backend `GET /api/conversations` and authenticated JWT calls.
 - API integration is centralized in `src/lib/api-client.ts`; avoid direct `fetch` calls for authenticated endpoints.
