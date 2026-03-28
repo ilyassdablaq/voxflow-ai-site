@@ -112,7 +112,7 @@ export default function Integrations() {
 
   return (
     <DashboardShell title="Integrations" description="Install your chatbot on any website using an embeddable widget.">
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Widget Configuration</CardTitle>
@@ -131,7 +131,7 @@ export default function Integrations() {
             <div className="space-y-2">
               <label className="text-sm">Position</label>
               <select
-                className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+                className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
                 value={position || data.position}
                 onChange={(event) => setPosition(event.target.value as "bottom-right" | "bottom-left")}
               >
@@ -143,7 +143,7 @@ export default function Integrations() {
             <div className="space-y-2">
               <label className="text-sm">Language</label>
               <select
-                className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+                className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
                 value={language || data.language}
                 onChange={(event) => setLanguage(event.target.value)}
               >
@@ -154,12 +154,12 @@ export default function Integrations() {
               </select>
             </div>
 
-            <div className="flex gap-2">
-              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="min-h-11">
                 {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                 Save Settings
               </Button>
-              <Button variant="outline" onClick={() => regenerateKeyMutation.mutate()} disabled={regenerateKeyMutation.isPending}>
+              <Button variant="outline" onClick={() => regenerateKeyMutation.mutate()} disabled={regenerateKeyMutation.isPending} className="min-h-11">
                 {regenerateKeyMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <KeyRound className="w-4 h-4 mr-2" />}
                 Regenerate Key
               </Button>
@@ -175,7 +175,7 @@ export default function Integrations() {
             <p className="text-sm text-muted-foreground">Paste this script before the closing `&lt;/body&gt;` tag on your website.</p>
             <Textarea value={scriptSnippet} readOnly rows={8} className="font-mono text-xs" />
             <div className="flex gap-2">
-              <Button onClick={copySnippet}>
+              <Button onClick={copySnippet} className="min-h-11">
                 <Copy className="w-4 h-4 mr-2" />
                 Copy Snippet
               </Button>

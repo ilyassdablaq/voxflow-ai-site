@@ -1,15 +1,38 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, ArrowRight } from "lucide-react";
+import { ArrowRight, Check, CreditCard, Lock, ShieldCheck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SectionHeading from "@/components/SectionHeading";
 
+const checkoutMethods = [
+  {
+    title: "Credit / Debit Cards",
+    description: "Visa, Mastercard, American Express and other major cards.",
+    icon: CreditCard,
+  },
+  {
+    title: "PayPal",
+    description: "Available when enabled for your Stripe account and region.",
+    icon: Wallet,
+  },
+  {
+    title: "Apple Pay / Google Pay",
+    description: "Displayed automatically on supported devices and browsers.",
+    icon: Wallet,
+  },
+  {
+    title: "SEPA Direct Debit",
+    description: "Supported for eligible EU users and EUR subscription setups.",
+    icon: CreditCard,
+  },
+];
+
 const plans = [
   {
     name: "Free",
-    price: "$0",
+    price: "EUR 0",
     period: "forever",
     desc: "Perfect for testing and prototyping.",
     features: ["100 voice minutes/month", "Basic NLU", "1 voice agent", "Community support", "API access"],
@@ -18,7 +41,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$49",
+    price: "EUR 49",
     period: "/month",
     desc: "For growing teams and businesses.",
     features: ["5,000 voice minutes/month", "Advanced NLU + sentiment", "Unlimited agents", "Priority support", "Analytics dashboard", "Custom voice profiles", "Webhook integrations"],
@@ -27,11 +50,11 @@ const plans = [
   },
   {
     name: "Enterprise",
-    price: "Custom",
-    period: "",
-    desc: "For large-scale deployments.",
-    features: ["Unlimited voice minutes", "Custom LLM fine-tuning", "Dedicated infrastructure", "24/7 premium support", "SLA guarantees", "Data residency options", "SSO & RBAC", "Custom integrations"],
-    cta: "Contact Sales",
+    price: "EUR 99",
+    period: "/month",
+    desc: "For large-scale deployments with premium support.",
+    features: ["100,000 voice minutes/month", "10,000,000 AI tokens/month", "Dedicated infrastructure", "24/7 premium support", "SLA guarantees", "Data residency options", "SSO & RBAC", "Custom integrations"],
+    cta: "Start Enterprise",
     highlighted: false,
   },
 ];
@@ -98,6 +121,53 @@ const Pricing = () => (
               </Button>
             </motion.div>
           ))}
+        </div>
+      </div>
+    </section>
+
+    <section className="section-padding pt-0">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <SectionHeading
+          badge="Checkout"
+          title="Payment methods you can trust"
+          subtitle="Method availability can vary by country, currency, and device."
+        />
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {checkoutMethods.map((method, index) => {
+            const Icon = method.icon;
+
+            return (
+              <motion.div key={method.title} {...fadeUp} transition={{ delay: index * 0.08 }} className="glass rounded-xl p-5">
+                <p className="font-heading font-semibold text-foreground flex items-center gap-2">
+                  <Icon className="w-4 h-4 text-primary" />
+                  {method.title}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">{method.description}</p>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="glass rounded-xl p-5">
+            <p className="font-heading font-semibold text-foreground flex items-center gap-2">
+              <Lock className="w-4 h-4 text-primary" />
+              Secure payment flow
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Transactions run through encrypted Stripe checkout pages to protect payment details in transit.
+            </p>
+          </motion.div>
+          <motion.div {...fadeUp} transition={{ delay: 0.18 }} className="glass rounded-xl p-5">
+            <p className="font-heading font-semibold text-foreground flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-primary" />
+              Reliable subscription updates
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Payment success and failure events are synced from Stripe so your subscription state stays accurate.
+            </p>
+          </motion.div>
         </div>
       </div>
     </section>

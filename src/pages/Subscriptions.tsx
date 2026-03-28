@@ -1,14 +1,41 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Check, Loader2 } from "lucide-react";
+import { Check, CreditCard, Loader2, Lock, ShieldCheck } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { subscriptionService } from "@/services/subscription.service";
+import { PaymentMethodOption, subscriptionService } from "@/services/subscription.service";
+
+const fallbackPaymentMethods: PaymentMethodOption[] = [
+  {
+    key: "card",
+    label: "Credit / Debit Cards",
+    description: "Visa, Mastercard, American Express and other major cards.",
+    enabled: true,
+  },
+  {
+    key: "paypal",
+    label: "PayPal",
+    description: "Available where Stripe account and region support it.",
+    enabled: true,
+  },
+  {
+    key: "wallets",
+    label: "Apple Pay / Google Pay",
+    description: "Shown automatically on supported devices and browsers.",
+    enabled: true,
+  },
+  {
+    key: "sepa_debit",
+    label: "SEPA Direct Debit",
+    description: "Available for eligible EU customers and EUR billing setups.",
+    enabled: true,
+  },
+];
 
 const fallbackPlans = [
   {
@@ -36,12 +63,20 @@ const fallbackPlans = [
     key: "enterprise",
     name: "Enterprise",
     interval: "MONTHLY" as const,
-    priceCents: 19900,
+    priceCents: 9900,
     voiceMinutes: 2000,
-    tokenLimit: 2000000,
+    tokenLimit: 10000000,
     features: ["Custom SLAs", "Advanced analytics", "Dedicated success manager"],
   },
 ];
+
+function formatEuroFromCents(priceCents: number): string {
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(priceCents / 100);
+}
 
 function normalizeFeatures(features: unknown): string[] {
   if (Array.isArray(features)) {
@@ -71,6 +106,11 @@ export default function Subscriptions() {
     queryFn: () => subscriptionService.getCurrentSubscription(),
   });
 
+  const { data: checkoutCapabilities } = useQuery({
+    queryKey: ["checkout-capabilities"],
+    queryFn: () => subscriptionService.getCheckoutCapabilities(),
+  });
+
   const currentPlanKey = currentSubscription?.plan?.key;
 
   const upgradeMutation = useMutation({
@@ -92,6 +132,12 @@ export default function Subscriptions() {
     return [...sourcePlans].sort((a, b) => a.priceCents - b.priceCents);
   }, [plans]);
 
+  const paymentMethods = useMemo(() => {
+    const apiMethods = checkoutCapabilities?.paymentMethods;
+    const source = apiMethods && apiMethods.length > 0 ? apiMethods : fallbackPaymentMethods;
+    return source.filter((method) => method.enabled);
+  }, [checkoutCapabilities]);
+
   return (
     <DashboardShell title="Subscriptions" description="Manage your plan, usage capacity, and billing readiness.">
       <div className="space-y-8">
@@ -110,11 +156,51 @@ export default function Subscriptions() {
                     {currentSubscription.plan.voiceMinutes} voice minutes • {currentSubscription.plan.tokenLimit.toLocaleString()} tokens/month
                   </p>
                 </div>
-                <p className="text-sm text-muted-foreground">Billing integration is Stripe-ready (mocked for now).</p>
+                <p className="text-sm text-muted-foreground">Billing is processed securely through Stripe checkout.</p>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">No active subscription yet. Select a plan below.</p>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-primary" />
+              Payment Methods & Security
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="grid gap-3 md:grid-cols-2">
+              {paymentMethods.map((method) => (
+                <div key={method.key} className="rounded-lg border p-3">
+                  <p className="font-medium text-sm">{method.label}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{method.description}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-primary" />
+                  Encrypted Transactions
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Checkout uses HTTPS and Stripe-hosted payment forms so card details never touch your app server.
+                </p>
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-primary" />
+                  Reliable Billing Status
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Subscription status is updated from Stripe webhook events for successful and failed payments.
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -147,7 +233,7 @@ export default function Subscriptions() {
                     {isCurrent ? <span className="text-xs px-2 py-1 rounded bg-primary/10 text-primary">Current Plan</span> : null}
                   </div>
                   <p className="text-3xl font-bold">
-                    ${(plan.priceCents / 100).toFixed(0)}
+                    {formatEuroFromCents(plan.priceCents)}
                     <span className="text-sm text-muted-foreground font-normal">/{plan.interval === "MONTHLY" ? "mo" : "yr"}</span>
                   </p>
                 </CardHeader>

@@ -63,9 +63,9 @@ const useCases = [
 ];
 
 const pricingPreview = [
-  { name: "Free", price: "$0", note: "Best to get started", points: ["Basic widget", "Core AI chat", "Starter limits"] },
-  { name: "Pro", price: "$49/mo", note: "For growing businesses", points: ["Higher usage", "Advanced features", "Priority support"] },
-  { name: "Enterprise", price: "Custom", note: "For scale and security", points: ["Custom SLAs", "Dedicated support", "Custom integrations"] },
+  { name: "Free", price: "EUR 0", note: "Best to get started", points: ["Basic widget", "Core AI chat", "Starter limits"] },
+  { name: "Pro", price: "EUR 49/mo", note: "For growing businesses", points: ["Higher usage", "Advanced features", "Priority support"] },
+  { name: "Enterprise", price: "EUR 99/mo", note: "For scale and security", points: ["Custom SLAs", "Dedicated support", "Custom integrations"] },
 ];
 
 const fadeUp = {

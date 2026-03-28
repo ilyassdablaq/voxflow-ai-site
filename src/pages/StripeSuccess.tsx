@@ -1,19 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 
 export function StripeSuccess() {
   const navigate = useNavigate();
   const { refreshSubscription } = useAuth();
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleSuccess = async () => {
-      // Refresh subscription to get updated plan
-      await refreshSubscription();
-      // Redirect to dashboard after 2 seconds
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 2000);
+      try {
+        // Refresh subscription to get updated plan from webhook writes.
+        await refreshSubscription();
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1800);
+      } catch (error) {
+        setSyncError(error instanceof Error ? error.message : 'Unable to sync subscription status.');
+      }
     };
 
     handleSuccess();
@@ -28,10 +32,25 @@ export function StripeSuccess() {
           </svg>
         </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Upgrade Successful!</h1>
-        <p className="text-gray-600 mb-4">Your subscription has been activated. Redirecting to dashboard...</p>
-        <div className="animate-spin">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
-        </div>
+        {syncError ? (
+          <>
+            <p className="text-gray-600 mb-4">Payment was successful, but we could not refresh your account automatically.</p>
+            <p className="text-sm text-red-600 mb-6">{syncError}</p>
+            <button
+              onClick={() => navigate('/dashboard/subscriptions')}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Open Subscriptions
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-gray-600 mb-4">Your subscription is active. Redirecting to dashboard...</p>
+            <div className="animate-spin">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

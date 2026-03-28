@@ -37,7 +37,7 @@ const ChatBubble = memo(function ChatBubble({ message }: { message: ChatMessage 
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div className="max-w-[80%] space-y-1">
+      <div className="max-w-[92%] sm:max-w-[80%] space-y-1">
         <div
           className={`rounded-xl px-4 py-2 text-sm ${
             isUser ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-secondary text-secondary-foreground rounded-bl-sm"
@@ -399,19 +399,19 @@ export default function ConversationChat() {
   }
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-[100dvh] min-h-[100dvh] bg-background flex flex-col overflow-hidden">
       <header className="border-b border-border bg-card">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-2">
           <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <Mic className="w-4 h-4 text-primary" />
             <select
               value={selectedLanguage}
               onChange={(event) => setSelectedLanguage(event.target.value)}
-              className="h-8 rounded-md border border-border bg-background px-2 text-xs"
+              className="h-9 rounded-md border border-border bg-background px-2 text-xs"
               aria-label="Conversation language"
             >
               {SUPPORTED_LANGUAGES.map((language) => (
@@ -420,12 +420,12 @@ export default function ConversationChat() {
                 </option>
               ))}
             </select>
-            <span className="text-sm text-muted-foreground">{connectionLabel}</span>
+            <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">{connectionLabel}</span>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 flex-1 min-h-0 flex flex-col">
+      <main className="max-w-5xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4 flex-1 min-h-0 flex flex-col">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -436,7 +436,7 @@ export default function ConversationChat() {
             <p className="text-xs text-muted-foreground">ID: {id}</p>
           </div>
 
-          <div className="chat-scrollbar flex-1 min-h-0 overflow-y-auto overscroll-contain scroll-smooth p-4 space-y-3">
+          <div className="chat-scrollbar flex-1 min-h-0 overflow-y-auto overscroll-contain scroll-smooth p-3 sm:p-4 space-y-3">
             {isLoading ? (
               <div className="space-y-3">
                 {[0, 1, 2].map((item) => (
@@ -465,7 +465,7 @@ export default function ConversationChat() {
 
             {streamedAssistantText ? (
               <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-xl rounded-bl-sm px-4 py-2 text-sm bg-secondary text-secondary-foreground">
+                <div className="max-w-[92%] sm:max-w-[80%] rounded-xl rounded-bl-sm px-4 py-2 text-sm bg-secondary text-secondary-foreground">
                   {streamedAssistantText}
                 </div>
               </div>
@@ -473,29 +473,40 @@ export default function ConversationChat() {
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={handleSendMessage} className="p-4 border-t border-border flex items-center gap-2">
-            <Input
-              value={inputValue}
-              onChange={(event) => setInputValue(event.target.value)}
-              placeholder="Type your message..."
-              aria-label="Chat message"
-            />
-            <Button
-              type="button"
-              variant={isListening ? "destructive" : "outline"}
-              onClick={toggleListening}
-              disabled={!speechRecognitionSupported}
-              aria-label={isListening ? "Stop voice input" : "Start voice input"}
-            >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            </Button>
-            <Button type="submit" disabled={connectionState !== "connected" || !inputValue.trim() || isAwaitingAssistantResponse}>
-              {connectionState === "connecting" || isAwaitingAssistantResponse ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
+          <form
+            onSubmit={handleSendMessage}
+            className="sticky bottom-0 p-3 sm:p-4 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80"
+          >
+            <div className="flex items-center gap-2">
+              <Input
+                value={inputValue}
+                onChange={(event) => setInputValue(event.target.value)}
+                placeholder="Type your message..."
+                aria-label="Chat message"
+                className="h-11"
+              />
+              <Button
+                type="button"
+                variant={isListening ? "destructive" : "outline"}
+                onClick={toggleListening}
+                disabled={!speechRecognitionSupported}
+                aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                className="h-11 w-11 px-0 shrink-0"
+              >
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </Button>
+              <Button
+                type="submit"
+                disabled={connectionState !== "connected" || !inputValue.trim() || isAwaitingAssistantResponse}
+                className="h-11 w-11 px-0 shrink-0"
+              >
+                {connectionState === "connecting" || isAwaitingAssistantResponse ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
           </form>
         </motion.div>
       </main>

@@ -54,9 +54,9 @@ async function main() {
     update: {
       type: PlanType.ENTERPRISE,
       interval: PlanInterval.MONTHLY,
-      priceCents: 0,
+      priceCents: 9900,
       voiceMinutes: 100000,
-      tokenLimit: 20_000_000,
+      tokenLimit: 10_000_000,
       features: ["Dedicated support", "SLA", "Custom integrations"],
       isActive: true,
     },
@@ -65,9 +65,9 @@ async function main() {
       name: "Enterprise",
       type: PlanType.ENTERPRISE,
       interval: PlanInterval.MONTHLY,
-      priceCents: 0,
+      priceCents: 9900,
       voiceMinutes: 100000,
-      tokenLimit: 20_000_000,
+      tokenLimit: 10_000_000,
       features: ["Dedicated support", "SLA", "Custom integrations"],
     },
   });

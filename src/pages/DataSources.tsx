@@ -161,7 +161,7 @@ export default function DataSources() {
 
   return (
     <DashboardShell title="Data Sources" description="Train your chatbot with your business data in minutes.">
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Upload files</CardTitle>
@@ -174,7 +174,7 @@ export default function DataSources() {
               }}
               onDragLeave={() => setIsDragActive(false)}
               onDrop={handleDrop}
-              className={`rounded-lg border border-dashed p-6 text-center ${isDragActive ? "border-primary bg-primary/5" : "border-border"}`}
+              className={`rounded-lg border border-dashed p-4 sm:p-6 text-center ${isDragActive ? "border-primary bg-primary/5" : "border-border"}`}
             >
               <FileUp className="w-8 h-8 mx-auto text-primary mb-3" />
               <p className="text-sm text-muted-foreground">Drag and drop PDF, TXT, JSON, or XML files here.</p>
@@ -191,7 +191,7 @@ export default function DataSources() {
                 variant="outline"
                 disabled={isBusy}
                 onClick={handleChooseFile}
-                className="mt-3"
+                className="mt-3 min-h-11"
               >
                 Choose file
               </Button>
@@ -220,7 +220,7 @@ export default function DataSources() {
             <Button
               onClick={() => crawlMutation.mutate()}
               disabled={!websiteUrl.trim() || isBusy}
-              className="w-full"
+              className="w-full min-h-11"
             >
               {crawlMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Globe className="w-4 h-4 mr-2" />}
               Crawl and train chatbot
@@ -243,7 +243,7 @@ export default function DataSources() {
             <select
               value={structuredFormat}
               onChange={(event) => setStructuredFormat(event.target.value as "json" | "xml")}
-              className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+              className="h-11 rounded-md border border-border bg-background px-3 text-sm"
               disabled={isBusy}
             >
               <option value="json">JSON</option>
@@ -259,7 +259,7 @@ export default function DataSources() {
             <Button
               onClick={() => structuredMutation.mutate()}
               disabled={!structuredTitle.trim() || !structuredContent.trim() || isBusy}
-              className="w-full"
+              className="w-full min-h-11"
             >
               {structuredMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Parse and train
@@ -292,6 +292,7 @@ export default function DataSources() {
                     onClick={() => deleteMutation.mutate(doc.id)}
                     disabled={deleteMutation.isPending}
                     aria-label="Delete source"
+                    className="touch-target"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

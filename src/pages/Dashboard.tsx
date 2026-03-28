@@ -136,7 +136,7 @@ const Dashboard = () => {
           className="space-y-8"
         >
           {/* Create New Conversation */}
-          <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <div className="bg-card border border-border rounded-lg p-4 sm:p-6 space-y-4">
             <h3 className="font-semibold text-lg">Create New Conversation</h3>
             <div className="flex flex-col sm:flex-row gap-2">
               <Input
@@ -147,11 +147,12 @@ const Dashboard = () => {
                 aria-label="Conversation title"
                 disabled={createConversationMutation.isPending}
                 onKeyDown={(e) => e.key === "Enter" && handleCreateConversation()}
+                className="h-11"
               />
               <select
                 value={newConversationLanguage}
                 onChange={(event) => setNewConversationLanguage(event.target.value)}
-                className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+                className="h-11 rounded-md border border-border bg-background px-3 text-sm"
                 aria-label="Conversation language"
                 disabled={createConversationMutation.isPending}
               >
@@ -160,7 +161,7 @@ const Dashboard = () => {
                 <option value="fr">Français</option>
                 <option value="ar">العربية</option>
               </select>
-              <Button onClick={handleCreateConversation} disabled={createConversationMutation.isPending}>
+              <Button onClick={handleCreateConversation} disabled={createConversationMutation.isPending} className="min-h-11">
                 <Plus className="w-4 h-4 mr-2" />
                 {createConversationMutation.isPending ? "Creating..." : "Create"}
               </Button>
@@ -205,9 +206,9 @@ const Dashboard = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     onClick={() => handleOpenConversation(conv.id)}
-                    className="bg-card border border-border rounded-lg p-6 hover:border-primary/50 transition-colors cursor-pointer group"
+                    className="bg-card border border-border rounded-lg p-4 sm:p-6 hover:border-primary/50 transition-colors cursor-pointer group"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         {renameConversationId === conv.id ? (
                           <div className="flex items-center gap-2 max-w-xl" onClick={(event) => event.stopPropagation()}>
@@ -256,7 +257,7 @@ const Dashboard = () => {
                           {new Date(conv.createdAt).toLocaleDateString()} • {conv.language.toUpperCase()} • {conv.status}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1 ml-3" onClick={(event) => event.stopPropagation()}>
+                      <div className="flex items-center gap-1 sm:ml-3" onClick={(event) => event.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -275,7 +276,7 @@ const Dashboard = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenConversation(conv.id)}>
+                        <Button variant="ghost" size="sm" onClick={() => handleOpenConversation(conv.id)} className="min-h-10 px-4">
                           {openingConversationId === conv.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Open"}
                         </Button>
                       </div>

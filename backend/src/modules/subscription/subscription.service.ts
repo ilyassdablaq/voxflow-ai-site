@@ -1,9 +1,14 @@
 import { SubscriptionRepository } from "./subscription.repository.js";
 import { AppError } from "../../common/errors/app-error.js";
 import { prisma } from "../../infra/database/prisma.js";
+import { PlanRepository } from "../plan/plan.repository.js";
+import { PlanService } from "../plan/plan.service.js";
+import { stripeService } from "../../services/stripe/stripe.service.js";
 
 export class SubscriptionService {
   constructor(private readonly repository: SubscriptionRepository) {}
+
+  private readonly planService = new PlanService(new PlanRepository());
 
   async getCurrentSubscription(userId: string) {
     await this.repository.ensureDefaultFreePlanSubscription(userId);
@@ -16,6 +21,26 @@ export class SubscriptionService {
 
   async getAvailablePlans() {
     return this.repository.getAvailablePlans();
+  }
+
+  async cancelAndDowngradeToFree(userId: string) {
+    await this.repository.ensureDefaultFreePlanSubscription(userId);
+
+    const currentSubscription = await this.repository.getCurrentSubscriptionWithPlan(userId);
+    if (!currentSubscription) {
+      throw new AppError(404, 'SUBSCRIPTION_NOT_FOUND', 'No active subscription found');
+    }
+
+    if (currentSubscription.plan.key === 'free') {
+      return currentSubscription;
+    }
+
+    if (currentSubscription.stripeSubscriptionId) {
+      await stripeService.cancelSubscriptionById(currentSubscription.stripeSubscriptionId);
+    }
+
+    await this.planService.changePlan(userId, 'free');
+    return this.getCurrentSubscription(userId);
   }
 
   async validateSubscriptionActive(userId: string): Promise<boolean> {

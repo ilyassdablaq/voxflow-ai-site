@@ -12,7 +12,8 @@ export function StripeCancel() {
           </svg>
         </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Upgrade Canceled</h1>
-        <p className="text-gray-600 mb-6">You didn't complete the upgrade. No changes were made to your account.</p>
+        <p className="text-gray-600 mb-2">You did not complete checkout, or the payment could not be confirmed.</p>
+        <p className="text-sm text-gray-500 mb-6">No charge is applied until Stripe confirms payment. Your current plan remains unchanged.</p>
         <div className="flex gap-4 justify-center">
           <button
             onClick={() => navigate('/dashboard')}

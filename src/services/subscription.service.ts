@@ -22,6 +22,17 @@ export interface CurrentSubscription {
   plan: Plan;
 }
 
+export interface PaymentMethodOption {
+  key: "card" | "paypal" | "wallets" | "sepa_debit";
+  label: string;
+  description: string;
+  enabled: boolean;
+}
+
+export interface CheckoutCapabilities {
+  paymentMethods: PaymentMethodOption[];
+}
+
 export const subscriptionService = {
   listPlans(): Promise<Plan[]> {
     return apiClient.get<Plan[]>("/api/plans");
@@ -31,12 +42,20 @@ export const subscriptionService = {
     return apiClient.get<Plan[]>("/api/subscriptions/available");
   },
 
+  getCheckoutCapabilities(): Promise<CheckoutCapabilities> {
+    return apiClient.get<CheckoutCapabilities>("/api/subscriptions/payment-methods");
+  },
+
   getCurrentSubscription(): Promise<CurrentSubscription> {
     return apiClient.get<CurrentSubscription>("/api/subscriptions/current");
   },
 
   changePlan(planKey: string): Promise<CurrentSubscription> {
     return apiClient.post<CurrentSubscription>("/api/subscriptions/change", { planKey });
+  },
+
+  cancelToFreePlan(): Promise<CurrentSubscription> {
+    return apiClient.post<CurrentSubscription>("/api/subscriptions/cancel", {});
   },
 
   async startUpgrade(planKey: string): Promise<string> {

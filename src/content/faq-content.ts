@@ -8,6 +8,7 @@ import {
   MessageCircle,
   Mic,
   Settings2,
+  ShieldCheck,
   Workflow,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -180,6 +181,31 @@ export const FAQ_SECTIONS: FaqSection[] = [
         question: "What is a basic API usage example?",
         answer:
           "Create an API key in Developer, send a REST request with your key and message payload, then render the returned response in your own application interface.",
+      },
+    ],
+  },
+  {
+    id: "privacy-security",
+    title: "Data Privacy & Security",
+    icon: ShieldCheck,
+    items: [
+      {
+        id: "how-data-is-handled",
+        question: "How do you handle my conversations and uploaded data?",
+        answer:
+          "Your conversations and uploaded files are processed through secure services, and your data stays tied to your own account. One customer cannot access another customer’s data.",
+      },
+      {
+        id: "ai-provider-data-usage",
+        question: "How is my data used with AI providers like OpenAI?",
+        answer:
+          "We send only the data needed to generate your response. Customer data is not used to train the model, and providers process it only for the request lifecycle under their API policies.",
+      },
+      {
+        id: "encryption-controls",
+        question: "Is my data encrypted and can I delete it?",
+        answer:
+          "Yes. Data is protected in transit with HTTPS, and storage protections are applied in our infrastructure. You can delete conversations, and you can request account deletion to remove your workspace data.",
       },
     ],
   },

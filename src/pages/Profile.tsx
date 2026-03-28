@@ -18,12 +18,14 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { userService } from "@/services/user.service";
 import { useAuth } from "@/hooks/use-auth";
+import { subscriptionService } from "@/services/subscription.service";
 
 export default function Profile() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { logout } = useAuth();
+  const { logout, subscription, refreshSubscription } = useAuth();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmCancelPlan, setConfirmCancelPlan] = useState(false);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["my-profile"],
@@ -44,6 +46,26 @@ export default function Profile() {
       toast({
         title: "Delete failed",
         description: error instanceof Error ? error.message : "Unable to delete account",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const cancelPlanMutation = useMutation({
+    mutationFn: () => subscriptionService.cancelToFreePlan(),
+    onSuccess: async () => {
+      await refreshSubscription();
+      setConfirmCancelPlan(false);
+      toast({
+        title: "Subscription canceled",
+        description: "Your account has been moved back to the Free plan.",
+      });
+      navigate("/dashboard/subscriptions");
+    },
+    onError: (error) => {
+      toast({
+        title: "Cancellation failed",
+        description: error instanceof Error ? error.message : "Unable to cancel subscription",
         variant: "destructive",
       });
     },
@@ -86,18 +108,59 @@ export default function Profile() {
           <CardHeader>
             <CardTitle>Account Actions</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row gap-3">
-            <Button variant="outline" onClick={logout}>Logout</Button>
-            <Button
-              variant="destructive"
-              onClick={() => setConfirmDelete(true)}
-              disabled={deleteAccountMutation.isPending}
-            >
-              Delete Account
-            </Button>
+          <CardContent className="space-y-4">
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs text-muted-foreground">Current Subscription</p>
+              <p className="text-sm font-medium">{subscription?.plan?.name ?? "Free"}</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              {subscription?.plan?.key !== "free" ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => setConfirmCancelPlan(true)}
+                  disabled={cancelPlanMutation.isPending}
+                >
+                  {cancelPlanMutation.isPending ? "Cancelling..." : "Cancel Subscription (Back to Free)"}
+                </Button>
+              ) : (
+                <Button variant="secondary" disabled>
+                  You are already on the Free plan
+                </Button>
+              )}
+
+              <Button variant="outline" onClick={logout}>Logout</Button>
+              <Button
+                variant="destructive"
+                onClick={() => setConfirmDelete(true)}
+                disabled={deleteAccountMutation.isPending}
+              >
+                Delete Account
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={confirmCancelPlan} onOpenChange={setConfirmCancelPlan}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Subscription cancel and downgrade?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your paid plan will be canceled and your account will return to the Free plan. Paid features and higher limits may stop immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelPlanMutation.isPending}>Keep current plan</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={cancelPlanMutation.isPending}
+              onClick={() => cancelPlanMutation.mutate()}
+            >
+              {cancelPlanMutation.isPending ? "Cancelling..." : "Cancel and switch to Free"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>

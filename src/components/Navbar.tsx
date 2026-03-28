@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,10 @@ const navLinks = [
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
@@ -59,8 +63,10 @@ const Navbar = () => {
 
           {/* Mobile toggle */}
           <button
-            className="md:hidden text-foreground"
+            className="md:hidden text-foreground touch-target inline-flex items-center justify-center rounded-md"
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -76,13 +82,13 @@ const Navbar = () => {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden glass border-t border-border"
           >
-            <div className="px-4 py-4 space-y-2">
+            <div className="px-4 py-4 space-y-2 max-h-[calc(100dvh-4rem)] overflow-auto">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   to={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`block px-3 py-2 text-sm rounded-md ${
+                  className={`block px-3 py-3 text-sm rounded-md ${
                     location.pathname === link.href
                       ? "text-primary bg-primary/10"
                       : "text-muted-foreground hover:text-foreground"
@@ -91,10 +97,10 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
-              <Button variant="ghost" size="sm" className="w-full mt-3 justify-start" asChild>
+              <Button variant="ghost" size="sm" className="w-full mt-3 justify-start min-h-11" asChild>
                 <Link to="/sign-in" onClick={() => setMobileOpen(false)}>Sign In</Link>
               </Button>
-              <Button size="sm" className="w-full glow-primary" asChild>
+              <Button size="sm" className="w-full glow-primary min-h-11" asChild>
                 <Link to="/sign-up" onClick={() => setMobileOpen(false)}>Start Free Trial</Link>
               </Button>
             </div>

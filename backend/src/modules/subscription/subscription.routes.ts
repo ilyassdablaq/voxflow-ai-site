@@ -43,6 +43,14 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
     }
   );
 
+  // Get checkout payment method capabilities for pricing/checkout UX
+  fastify.get(
+    "/api/subscriptions/payment-methods",
+    async () => {
+      return stripeService.getCheckoutCapabilities();
+    }
+  );
+
   // Start Stripe checkout for plan upgrade
   fastify.post(
     "/api/subscriptions/upgrade",
@@ -50,14 +58,14 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
     async (request, reply) => {
       const user = request.user as { sub: string };
       const { planKey } = request.body as { planKey?: string };
+      const originHeader = request.headers.origin;
+      const baseOrigin = resolveCheckoutBaseOrigin(originHeader);
 
       if (!planKey) {
         throw new AppError(400, 'INVALID_INPUT', 'planKey is required');
       }
 
       try {
-        const originHeader = request.headers.origin;
-        const baseOrigin = resolveCheckoutBaseOrigin(originHeader);
         const { sessionId, url } = await stripeService.createCheckoutSession(user.sub, planKey, {
           successUrl: `${baseOrigin}/stripe-success`,
           cancelUrl: `${baseOrigin}/stripe-cancel`,
@@ -67,15 +75,25 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
         if (
           env.NODE_ENV !== "production" &&
           error instanceof AppError &&
-          error.code === "STRIPE_NOT_CONFIGURED"
+          (error.code === "STRIPE_NOT_CONFIGURED" || error.code === "PLAN_NOT_AVAILABLE")
         ) {
           await planService.changePlan(user.sub, planKey);
-          const successUrl = `${env.APP_ORIGIN}/stripe-success?mode=dev-upgrade`;
+          const successUrl = `${baseOrigin}/stripe-success?mode=dev-upgrade`;
           return reply.status(200).send({ sessionId: "dev-upgrade", url: successUrl });
         }
 
         throw error;
       }
+    }
+  );
+
+  // Cancel active paid subscription and switch back to free plan
+  fastify.post(
+    "/api/subscriptions/cancel",
+    { preHandler: [authenticate] },
+    async (request) => {
+      const user = request.user as { sub: string };
+      return service.cancelAndDowngradeToFree(user.sub);
     }
   );
 
