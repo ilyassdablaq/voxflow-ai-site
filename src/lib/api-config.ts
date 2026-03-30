@@ -1,15 +1,9 @@
-const configuredApiBase = import.meta.env.VITE_API_URL;
+const DEFAULT_API_BASE = "https://voxflow-ai-site.onrender.com";
 
-export const API_BASE = configuredApiBase || "http://localhost:4000";
+const configuredApiBase = import.meta.env.VITE_API_URL?.replace(/\/+$/, "");
 
-const LOCAL_API_FALLBACKS = [
-	"http://localhost:4300",
-	"http://localhost:4000",
-	"http://localhost:4001",
-	"http://localhost:4010",
-	"http://localhost:4200",
-];
+export const API_BASE = configuredApiBase || DEFAULT_API_BASE;
 
 export const API_BASE_CANDIDATES = configuredApiBase
-	? [configuredApiBase, ...LOCAL_API_FALLBACKS]
-	: LOCAL_API_FALLBACKS;
+	? [configuredApiBase]
+	: [DEFAULT_API_BASE];

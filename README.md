@@ -100,7 +100,7 @@ VoxAI is a comprehensive platform that combines advanced speech-to-text, natural
 4. **Configure frontend API target (required for dashboard/auth)**
   ```bash
   # .env.local
-  VITE_API_URL=http://localhost:4000
+  VITE_API_URL=https://voxflow-ai-site.onrender.com/
   ```
 
 ##   Running the Project
