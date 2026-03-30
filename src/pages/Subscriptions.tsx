@@ -185,14 +185,24 @@ export default function Subscriptions() {
             {isCurrentLoading ? (
               <Skeleton className="h-14 w-full" />
             ) : currentSubscription ? (
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div>
-                  <p className="text-lg font-semibold">{currentSubscription.plan.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {currentSubscription.plan.voiceMinutes} voice minutes • {currentSubscription.plan.tokenLimit.toLocaleString()} tokens/month
-                  </p>
+              <div className="space-y-3">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <p className="text-lg font-semibold">{currentSubscription.plan.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {currentSubscription.plan.voiceMinutes} voice minutes • {currentSubscription.plan.tokenLimit.toLocaleString()} tokens/month
+                    </p>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Billing is processed securely through Stripe checkout.</p>
                 </div>
-                <p className="text-sm text-muted-foreground">Billing is processed securely through Stripe checkout.</p>
+                {currentSubscription.endsAt && (
+                  <div className="rounded-md bg-amber-50 border border-amber-200 p-3">
+                    <p className="text-xs text-amber-900 font-medium">
+                      Plan ends on {new Date(currentSubscription.endsAt).toLocaleDateString('de-DE', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                    <p className="text-xs text-amber-800 mt-1">Your access will be downgraded to Free plan after this date.</p>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">No active subscription yet. Select a plan below.</p>

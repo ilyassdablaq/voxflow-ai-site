@@ -63,7 +63,18 @@ export class StripeService {
         };
       }
 
-      throw new AppError(400, 'PLAN_NOT_AVAILABLE', 'This plan is not available for purchase');
+      logger.error(
+        { 
+          userId, 
+          planKey: plan.key, 
+          stripePriceId: stripePriceId || 'undefined',
+          paymentLinkUrl: paymentLinkUrl || 'undefined',
+          envPaymentLink: env.STRIPE_PAYMENT_LINK_DEFAULT || 'not_configured',
+        },
+        'Payment link not available for plan - missing Stripe price ID and no payment link configured'
+      );
+
+      throw new AppError(400, 'PLAN_NOT_AVAILABLE', 'This plan is not available for purchase. Please contact support.');
     }
 
     try {
