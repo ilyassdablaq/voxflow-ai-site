@@ -40,10 +40,10 @@ const Navbar = () => {
               <Link
                 key={link.href}
                 to={link.href}
-                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors min-h-10 flex items-center whitespace-nowrap ${
                   location.pathname === link.href
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    ? "text-primary bg-primary/10 hover:bg-primary/20"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                 }`}
               >
                 {link.label}
@@ -82,27 +82,29 @@ const Navbar = () => {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden glass border-t border-border"
           >
-            <div className="px-4 py-4 space-y-2 max-h-[calc(100dvh-4rem)] overflow-auto">
+            <div className="px-3 py-4 space-y-1.5 max-h-[calc(100dvh-4rem)] overflow-auto">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   to={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`block px-3 py-3 text-sm rounded-md ${
+                  className={`block px-4 py-3 text-sm font-medium rounded-lg transition-colors min-h-11 flex items-center ${
                     location.pathname === link.href
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "text-primary bg-primary/10 hover:bg-primary/20"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                   }`}
                 >
                   {link.label}
                 </Link>
               ))}
-              <Button variant="ghost" size="sm" className="w-full mt-3 justify-start min-h-11" asChild>
-                <Link to="/sign-in" onClick={() => setMobileOpen(false)}>Sign In</Link>
-              </Button>
-              <Button size="sm" className="w-full glow-primary min-h-11" asChild>
-                <Link to="/sign-up" onClick={() => setMobileOpen(false)}>Start Free Trial</Link>
-              </Button>
+              <div className="pt-3 border-t border-border/50 mt-4 space-y-2">
+                <Button variant="outline" size="lg" className="w-full min-h-12" asChild>
+                  <Link to="/sign-in" onClick={() => setMobileOpen(false)}>Sign In</Link>
+                </Button>
+                <Button size="lg" className="w-full glow-primary min-h-12" asChild>
+                  <Link to="/sign-up" onClick={() => setMobileOpen(false)}>Start Free Trial</Link>
+                </Button>
+              </div>
             </div>
           </motion.div>
         )}
