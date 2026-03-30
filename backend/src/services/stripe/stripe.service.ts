@@ -7,7 +7,7 @@ import {
   getStripeClient,
   getStripePaymentMethodDisplay,
 } from "../../config/stripe.js";
-import { getPlanKeyFromStripePrice } from "../../config/plan-stripe-mapping.js";
+import { getPlanKeyFromStripePrice, getStripePriceForPlan, normalizePlanKeyForCheckout } from "../../config/plan-stripe-mapping.js";
 
 export class StripeService {
   private stripe: any;
@@ -33,17 +33,21 @@ export class StripeService {
       throw new AppError(503, 'STRIPE_NOT_CONFIGURED', 'Payment processing is temporarily unavailable');
     }
 
-    // Get plan from database to verify it exists
-    const plan = await prisma.plan.findUnique({
-      where: { key: planKey },
-      select: { id: true, name: true, stripeProductId: true, stripePriceId: true },
-    });
+    const normalizedPlanKey = normalizePlanKeyForCheckout(planKey);
+
+    // Resolve by exact key first, then by normalized key, then by plan type fallback.
+    const plan = await this.resolveCheckoutPlan(normalizedPlanKey, planKey);
 
     if (!plan) {
       throw new AppError(404, 'PLAN_NOT_FOUND', 'Requested plan not found');
     }
 
-    if (!plan.stripePriceId) {
+    const stripePriceId =
+      plan.stripePriceId ||
+      getStripePriceForPlan(plan.key) ||
+      getStripePriceForPlan(normalizedPlanKey);
+
+    if (!stripePriceId) {
       throw new AppError(400, 'PLAN_NOT_AVAILABLE', 'This plan is not available for purchase');
     }
 
@@ -56,18 +60,54 @@ export class StripeService {
         configuredPaymentMethods,
         userId,
         plan.id,
-        planKey,
-        plan.stripePriceId,
+        plan.key,
+        stripePriceId,
         successUrl,
         cancelUrl,
       );
 
-      logger.info({ userId, planKey, sessionId: session.id }, 'Stripe checkout session created');
+      logger.info({ userId, requestedPlanKey: planKey, resolvedPlanKey: plan.key, sessionId: session.id }, 'Stripe checkout session created');
       return { sessionId: session.id, url: session.url };
     } catch (error) {
-      logger.error({ error, userId, planKey }, 'Stripe session creation failed');
+      logger.error({ error, userId, requestedPlanKey: planKey, resolvedPlanKey: plan.key }, 'Stripe session creation failed');
       throw new AppError(500, 'CHECKOUT_FAILED', 'Failed to create checkout session');
     }
+  }
+
+  private async resolveCheckoutPlan(normalizedPlanKey: string, requestedPlanKey: string) {
+    const candidateKeys = Array.from(new Set([requestedPlanKey, normalizedPlanKey]));
+
+    const directPlan = await prisma.plan.findFirst({
+      where: { key: { in: candidateKeys } },
+      select: { id: true, key: true, name: true, stripeProductId: true, stripePriceId: true },
+    });
+
+    if (directPlan) {
+      return directPlan;
+    }
+
+    const fallbackType = this.getPlanTypeForKey(normalizedPlanKey);
+    if (!fallbackType) {
+      return null;
+    }
+
+    return prisma.plan.findFirst({
+      where: { type: fallbackType, isActive: true },
+      orderBy: [{ interval: 'asc' }, { priceCents: 'asc' }],
+      select: { id: true, name: true, key: true, stripeProductId: true, stripePriceId: true },
+    });
+  }
+
+  private getPlanTypeForKey(planKey: string): 'PRO' | 'ENTERPRISE' | null {
+    if (planKey.startsWith('pro')) {
+      return 'PRO';
+    }
+
+    if (planKey.startsWith('enterprise')) {
+      return 'ENTERPRISE';
+    }
+
+    return null;
   }
 
   /**
