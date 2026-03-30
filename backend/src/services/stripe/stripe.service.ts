@@ -1,4 +1,5 @@
 import { AppError } from "../../common/errors/app-error.js";
+import { env } from "../../config/env.js";
 import { logger } from "../../config/logger.js";
 import { prisma } from "../../infra/database/prisma.js";
 import {
@@ -47,7 +48,21 @@ export class StripeService {
       getStripePriceForPlan(plan.key) ||
       getStripePriceForPlan(normalizedPlanKey);
 
+    const paymentLinkUrl = await this.buildPaymentLinkUrl(userId, plan.key, normalizedPlanKey);
+
     if (!stripePriceId) {
+      if (paymentLinkUrl) {
+        logger.info(
+          { userId, requestedPlanKey: planKey, resolvedPlanKey: plan.key },
+          'Using Stripe payment link fallback for checkout'
+        );
+
+        return {
+          sessionId: `payment-link-${plan.key}`,
+          url: paymentLinkUrl,
+        };
+      }
+
       throw new AppError(400, 'PLAN_NOT_AVAILABLE', 'This plan is not available for purchase');
     }
 
@@ -108,6 +123,48 @@ export class StripeService {
     }
 
     return null;
+  }
+
+  private getPaymentLinkForPlan(planKey: string): string | null {
+    const map: Record<string, string | undefined> = {
+      pro: env.STRIPE_PAYMENT_LINK_PRO,
+      'pro-monthly': env.STRIPE_PAYMENT_LINK_PRO_MONTHLY ?? env.STRIPE_PAYMENT_LINK_PRO,
+      'pro-yearly': env.STRIPE_PAYMENT_LINK_PRO_YEARLY,
+      enterprise: env.STRIPE_PAYMENT_LINK_ENTERPRISE,
+      'enterprise-monthly': env.STRIPE_PAYMENT_LINK_ENTERPRISE_MONTHLY ?? env.STRIPE_PAYMENT_LINK_ENTERPRISE,
+      'enterprise-yearly': env.STRIPE_PAYMENT_LINK_ENTERPRISE_YEARLY,
+    };
+
+    return map[planKey] ?? null;
+  }
+
+  private async buildPaymentLinkUrl(userId: string, resolvedPlanKey: string, normalizedPlanKey: string): Promise<string | null> {
+    const basePaymentLink =
+      this.getPaymentLinkForPlan(resolvedPlanKey) ||
+      this.getPaymentLinkForPlan(normalizedPlanKey);
+
+    if (!basePaymentLink) {
+      return null;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+
+    if (!user?.email) {
+      return basePaymentLink;
+    }
+
+    try {
+      const url = new URL(basePaymentLink);
+      if (!url.searchParams.has('prefilled_email')) {
+        url.searchParams.set('prefilled_email', user.email);
+      }
+      return url.toString();
+    } catch {
+      return basePaymentLink;
+    }
   }
 
   /**
