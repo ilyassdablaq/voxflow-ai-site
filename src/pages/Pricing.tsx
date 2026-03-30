@@ -77,7 +77,7 @@ const Pricing = () => (
           subtitle="Start free, scale as you grow. No hidden fees."
         />
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.name}

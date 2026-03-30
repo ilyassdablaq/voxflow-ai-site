@@ -33,7 +33,7 @@ const Features = () => (
           subtitle="From real-time voice processing to enterprise-grade security, VoxAI provides everything you need to build intelligent voice experiences."
         />
 
-        <div className="grid sm:grid-cols-2 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-5 sm:gap-6">
           {features.map((f, i) => (
             <motion.div
               key={f.title}

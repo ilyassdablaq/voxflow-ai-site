@@ -250,7 +250,7 @@ export default function Subscriptions() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(isPlansLoading ? [0, 1, 2] : sortedPlans).map((planOrSkeleton, index) => {
             if (isPlansLoading) {
               return (
@@ -294,12 +294,24 @@ export default function Subscriptions() {
                   </ul>
 
                   <Button
-                    className="w-full"
+                    className="w-full min-h-11"
                     variant={isCurrent ? "secondary" : "default"}
                     disabled={isCurrent || upgradeMutation.isPending}
                     onClick={() => upgradeMutation.mutate(plan.key)}
                   >
-                    {upgradeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : isCurrent ? "Current Plan" : "Upgrade to " + plan.name}
+                    {upgradeMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        Processing...
+                      </>
+                    ) : isCurrent ? (
+                      "Current Plan"
+                    ) : (
+                      <>
+                        Upgrade
+                        <span className="hidden sm:inline"> to {plan.name}</span>
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>

@@ -119,15 +119,15 @@ export function DashboardShell({ title, description, children }: DashboardShellP
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[88vw] max-w-sm p-0">
-                  <SheetHeader className="p-5 border-b border-border text-left">
+                <SheetContent side="left" className="w-[88vw] max-w-sm p-0 flex flex-col">
+                  <SheetHeader className="px-6 py-5 border-b border-border text-left shrink-0">
                     <SheetTitle>Dashboard Menu</SheetTitle>
                     <SheetDescription>{activeNavLabel}</SheetDescription>
                   </SheetHeader>
-                  <div className="px-4 py-4 border-b border-border">
+                  <div className="px-6 py-4 border-b border-border shrink-0">
                     <PlanBadge />
                   </div>
-                  <nav className="p-3 space-y-1">
+                  <nav className="px-3 py-2 space-y-1 flex-1 overflow-y-auto">
                     {navItems.map((item) => {
                       const Icon = item.icon;
 
@@ -151,7 +151,7 @@ export function DashboardShell({ title, description, children }: DashboardShellP
                       );
                     })}
                   </nav>
-                  <div className="p-3 border-t border-border mt-auto">
+                  <div className="px-3 py-4 border-t border-border mt-auto shrink-0">
                     <Button
                       variant="outline"
                       className="w-full min-h-11 justify-start"
