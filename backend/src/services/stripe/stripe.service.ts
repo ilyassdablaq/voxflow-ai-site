@@ -135,7 +135,7 @@ export class StripeService {
       'enterprise-yearly': env.STRIPE_PAYMENT_LINK_ENTERPRISE_YEARLY,
     };
 
-    return map[planKey] ?? null;
+    return map[planKey] ?? env.STRIPE_PAYMENT_LINK_DEFAULT ?? null;
   }
 
   private async buildPaymentLinkUrl(userId: string, resolvedPlanKey: string, normalizedPlanKey: string): Promise<string | null> {

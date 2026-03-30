@@ -59,6 +59,7 @@ const envSchema = z.object({
   STRIPE_PAYMENT_LINK_ENTERPRISE: z.string().optional(),
   STRIPE_PAYMENT_LINK_ENTERPRISE_MONTHLY: z.string().optional(),
   STRIPE_PAYMENT_LINK_ENTERPRISE_YEARLY: z.string().optional(),
+  STRIPE_PAYMENT_LINK_DEFAULT: z.string().optional(),
   STRIPE_ENABLE_PAYPAL: z.coerce.boolean().default(false),
   STRIPE_ENABLE_SEPA_DEBIT: z.coerce.boolean().default(false),
   STRIPE_ENABLE_WALLETS: z.coerce.boolean().default(true),
