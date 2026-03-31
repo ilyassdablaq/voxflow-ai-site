@@ -5,6 +5,16 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.test" });
 dotenv.config();
 
+// Ensure required env vars exist before any module imports env.ts
+process.env.NODE_ENV ||= "test";
+process.env.APP_ORIGIN ||= "http://localhost:3000";
+process.env.DATABASE_URL ||= "postgresql://postgres:postgres@localhost:5432/voxai_test";
+process.env.REDIS_URL ||= "redis://localhost:6379";
+process.env.JWT_ACCESS_SECRET ||= "test-access-secret-123456";
+process.env.JWT_REFRESH_SECRET ||= "test-refresh-secret-123456";
+process.env.JWT_ACCESS_EXPIRES_IN ||= "15m";
+process.env.JWT_REFRESH_EXPIRES_IN ||= "7d";
+
 // Mock external services
 vi.mock("@/config/logger", () => ({
   logger: {
@@ -19,10 +29,6 @@ vi.mock("@/config/logger", () => ({
 // Global test setup
 beforeAll(() => {
   process.env.NODE_ENV = "test";
-  process.env.JWT_SECRET = "test-jwt-secret-do-not-use-in-production";
-  process.env.REFRESH_TOKEN_SECRET = "test-refresh-token-secret";
-  process.env.JWT_EXPIRY = "15m";
-  process.env.REFRESH_TOKEN_EXPIRY = "7d";
 });
 
 // Cleanup after each test
