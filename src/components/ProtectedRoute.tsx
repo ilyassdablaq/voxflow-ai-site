@@ -10,7 +10,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isLoading, isLoggedIn } = useAuth();
 
   if (isLoading) {
-    return null;
+    return <div role="status" aria-label="loading-auth" />;
   }
 
   if (!isLoggedIn) {

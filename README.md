@@ -1,354 +1,169 @@
-# VoxAI – Conversational AI Voice Platform
+# VoxFlow AI Site
 
-A modern, production-ready landing page for VoxAI, a conversational AI platform that enables businesses to build intelligent voice bots for customer support, automation, and productivity.
+VoxFlow AI Site is a full-stack application with a React frontend and a Fastify backend. It provides authentication, conversation workflows, subscription management, integrations, analytics, and voice-related features.
 
-##  Overview
+## Project Structure
 
-VoxAI is a comprehensive platform that combines advanced speech-to-text, natural language understanding, and text-to-speech technologies to deliver real-time, human-like conversational experiences. This repository contains the marketing website and documentation portal built with modern web technologies.
+- `src/`: Frontend application (React + Vite + TypeScript)
+- `backend/src/`: Backend API (Fastify + Prisma + TypeScript)
+- `public/`: Static frontend assets
+- `backend/prisma/`: Database schema, migrations, and seed data
 
-### What VoxAI Does
-
-- **Real-Time Voice Processing**: Sub-second latency speech-to-text and text-to-speech
-- **Natural Language Understanding**: Context-aware intent detection and sentiment analysis
-- **Multi-Language Support**: 30+ languages with automatic detection
-- **Enterprise Security**: SOC 2 compliant, end-to-end encryption, GDPR ready
-- **Easy Integration**: RESTful API and WebSocket support for seamless implementation
-- **Analytics Dashboard**: Real-time insights into conversations and performance metrics
-
-##  Features
-
-### Platform Features
-- ✅ Real-Time Speech-to-Text with 30+ language support
-- ✅ Natural text-to-speech with customizable voice profiles
-- ✅ Advanced NLU powered by large language models
-- ✅ Multi-channel deployment (web, mobile, phone, smart speakers)
-- ✅ Workflow automation and CRM integration
-- ✅ Analytics dashboard with real-time metrics
-- ✅ Enterprise-grade security and compliance
-
-### Website Features
--  Modern, responsive UI built with Tailwind CSS
--  Fast performance with Vite and React 18
--  Smooth animations with Framer Motion
--  Mobile-first design
--  Accessible component library (shadcn/ui)
--  Interactive voice demo widget
--  Beautiful pricing and feature comparisons
-
-### Recent Production Hardening Improvements
-- ✅ Centralized API client with automatic token refresh retry on `401`
-- ✅ Dashboard migrated to TanStack Query for cache + resilient state handling
-- ✅ App-wide React Error Boundary with recovery UI
-- ✅ Improved loading, error, and retry states in authenticated dashboard views
-- ✅ Improved auth form accessibility (`label`/`htmlFor`) and stronger signup password validation
-- ✅ Voice demo fallback behavior for browsers without speech recognition/TTS
-
-##   Tech Stack
+## Tech Stack
 
 ### Frontend
-- **React** 18.3 – UI library
-- **TypeScript** 5.8 – Type-safe JavaScript
-- **Vite** 5.4 – Lightning-fast build tool
-- **React Router** 6.30 – Client-side routing
-- **Tailwind CSS** 3.4 – Utility-first CSS framework
+- React 18
+- Vite
+- TypeScript
+- React Router
+- React Query
+- Tailwind CSS
+- Vitest + Testing Library
 
-### UI & Components
-- **shadcn/ui** – High-quality React components
-- **Radix UI** – Headless component library
-- **Framer Motion** 12.38 – Animation library
-- **Lucide React** – Beautiful icon library
-- **Recharts** 2.15 – Chart visualization library
+### Backend
+- Fastify
+- Prisma
+- PostgreSQL
+- TypeScript
+- Stripe
+- OpenAI SDK
+- Vitest
 
-### Forms & Utilities
-- **React Hook Form** 7.61 – Efficient form management
-- **Zod** 3.25 – Schema validation
-- **Sonner** 1.7 – Toast notifications
-- **Embla Carousel** 8.6 – Touch carousel
-- **Date-fns** 3.6 – Date utilities
+## Prerequisites
 
-### Development Tools
-- **ESLint** – Code linting
-- **TypeScript ESLint** – TypeScript linting
-- **Vitest** 3.2 – Unit testing
-- **PostCSS & Autoprefixer** – CSS processing
+- Node.js 18+
+- npm
+- PostgreSQL (for backend)
 
-##  Installation
+## Setup
 
-### Prerequisites
-- **Node.js** 18+
-- npm package manager
+1. Install frontend dependencies from repository root:
 
-### Setup Steps
+```bash
+npm install
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/ilyassdablaq/voxflow-ai-site.git
-   cd voxai-website
-   ```
+2. Install backend dependencies:
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+cd backend
+npm install
+cd ..
+```
 
-3. **Start the development server**
-   ```bash
-   npm run dev
-   ```
-   The application will be available at `http://localhost:8081/`
+3. Configure environment variables.
 
-4. **Configure frontend API target (required for dashboard/auth)**
-  ```bash
-  # .env.local
-  VITE_API_URL=https://voxflow-ai-site.onrender.com/
-  ```
+Frontend: create `.env` in the repository root.
 
-##   Running the Project
+```env
+VITE_API_URL=http://localhost:4000
+```
 
-### Development Mode
+Backend: create `.env` in `backend/`.
+
+```env
+NODE_ENV=development
+PORT=4000
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/voxflow
+JWT_SECRET=replace_with_secure_secret
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+BCRYPT_SALT_ROUNDS=10
+STRIPE_SECRET_KEY=replace_if_using_stripe
+STRIPE_WEBHOOK_SECRET=replace_if_using_stripe
+OPENAI_API_KEY=replace_if_using_openai
+```
+
+4. Run Prisma migrations and generate client:
+
+```bash
+cd backend
+npm run prisma:generate
+npm run prisma:deploy
+cd ..
+```
+
+Optional seed:
+
+```bash
+cd backend
+npm run prisma:seed
+cd ..
+```
+
+## Run the Application
+
+### Frontend (from root)
+
 ```bash
 npm run dev
 ```
-Starts Vite dev server with hot module replacement (HMR). Open http://localhost:8081 in your browser.
 
-### Production Build
+### Backend (from `backend/`)
+
+```bash
+npm run dev
+```
+
+## Build
+
+### Frontend
+
 ```bash
 npm run build
 ```
-Creates an optimized production build in the `dist` directory.
 
-### Preview Production Build
+### Backend
+
 ```bash
-npm run preview
+cd backend
+npm run build
 ```
-Locally preview the production build.
 
-### Linting
+## Test
+
+### Frontend
+
+```bash
+npm run test
+```
+
+### Backend
+
+```bash
+cd backend
+npm run test
+```
+
+## Lint
+
+### Frontend
+
 ```bash
 npm run lint
 ```
-Run ESLint to check code quality.
 
-### Testing
-```bash
-# Run tests once
-npm run test
-
-# Watch mode
-npm run test:watch
-```
-
-Includes API client resilience tests in `src/test/api-client.test.ts`.
-
-##  Developer Notes
-
-- Dashboard requires backend `GET /api/conversations` and authenticated JWT calls.
-- API integration is centralized in `src/lib/api-client.ts`; avoid direct `fetch` calls for authenticated endpoints.
-- Auth refresh flow is implemented in `src/services/auth.service.ts` and reused automatically by `apiClient`.
-- Current lint output includes existing baseline issues in generated UI helper files; functional tests/build pass.
-
-
-
-### Key Directories
-
-- **`src/components`** – Reusable UI components (buttons, cards, forms, etc.)
-- **`src/pages`** – Full page components that map to routes
-- **`src/hooks`** – Custom React hooks for common functionality
-- **`src/lib`** – Utility functions and helpers
-- **`src/test`** – Test files for components and logic
-
-##  Styling & Design
-
-### Tailwind CSS
-The project uses Tailwind CSS for styling with a custom color scheme:
-- **Primary**: Cyan (#00D9FF)
-- **Accent**: Purple (#A366FF)
-- **Background**: Dark gray (#0D1117)
-- **Foreground**: Light gray (#E6EAEF)
-
-### Custom CSS Classes
-**`src/App.css`** defines reusable styling utilities:
-- `.glass` – Glassmorphism effect
-- `.glow-primary` – Glowing shadow effect
-- `.text-gradient` – Gradient text effect
-- `.section-padding` – Consistent padding
-- `.font-heading` – Custom heading font (Space Grotesk)
-
-##  Available Routes
-
-| Route | Description |
-|-------|-------------|
-| `/` | Home page with hero, features, and CTA |
-| `/features` | Detailed feature list |
-| `/how-it-works` | How VoxAI processes voice |
-| `/pricing` | Pricing plans (Free, Pro, Enterprise) |
-| `/api` | API documentation and code samples |
-| `/contact` | Contact form and support info |
-| `*` | 404 Not Found page |
-
-
-
-##  Component Examples
-
-### Using shadcn/ui Components
-
-```tsx
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-
-export default function Example() {
-  return (
-    <div>
-      <Input placeholder="Enter text..." />
-      <Button>Submit</Button>
-    </div>
-  );
-}
-```
-
-### Creating a Custom Component
-
-```tsx
-import { motion } from "framer-motion";
-
-export default function CustomCard() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      className="glass rounded-xl p-6"
-    >
-      <h3>Hello World</h3>
-    </motion.div>
-  );
-}
-```
-
-##  Common Development Tasks
-
-### Adding a New Page
-
-1. Create a new component in `src/pages/`
-2. Add a route in `src/App.tsx`
-3. Update navigation links in `src/components/Navbar.tsx`
-
-Example:
-```tsx
-// src/pages/NewPage.tsx
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-
-export default function NewPage() {
-  return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      {/* Your content */}
-      <Footer />
-    </div>
-  );
-}
-```
-
-### Updating Colors
-
-1. Modify CSS variables in `src/index.css` under `:root`
-2. Use Tailwind color utilities (e.g., `bg-primary`, `text-accent`)
-
-### Using Icons
-
-```tsx
-import { Mic, Zap, Globe } from "lucide-react";
-
-<Mic className="w-5 h-5 text-primary" />
-```
-
-See [Lucide React docs](https://lucide.dev) for available icons.
-
-##  Build & Deployment
-
-### Build for Production
+### Backend
 
 ```bash
-npm run build
+cd backend
+npm run lint
 ```
 
-This creates a `dist/` folder with optimized files ready for deployment.
+## Main Features
 
-### Deploy to Vercel
+- Authentication with access and refresh tokens
+- Password reset flow
+- Subscription and plan management
+- Stripe checkout and webhook handling
+- Conversation and workflow modules
+- Analytics and dashboard endpoints
+- Integration and developer portal modules
 
-1. Push code to GitHub
-2. Connect repository to Vercel
-3. Vercel automatically detects Vite and deploys on push
-4. Configure custom domain in Vercel dashboard
+## Production Notes
 
-
-
-**Docker:**
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "run", "preview"]
-```
-
-##  Performance Optimization
-
-- ✅ Code splitting via Vite
-- ✅ Lazy-loaded routes with React Router
-- ✅ Image optimization with efficient formats
-- ✅ CSS purging with Tailwind
-- ✅ Minified production builds
-- ✅ Caching strategies for assets
-
-##  Debugging & Troubleshooting
-
-### Dev Server Won't Start
-```bash
-# Clear node_modules and reinstall
-rm -rf node_modules package-lock.json
-npm install
-npm run dev
-```
-
-### TypeScript Errors
-```bash
-# Rebuild TypeScript
-npx tsc --noEmit
-```
-
-### Port Already in Use
-Edit `vite.config.ts` to change the port:
-```typescript
-server: { port: 3001 }
-```
-
-##  Additional Resources
-
-- [React Documentation](https://react.dev)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [Tailwind CSS Docs](https://tailwindcss.com/docs)
-- [Vite Documentation](https://vitejs.dev/)
-- [shadcn/ui Components](https://ui.shadcn.com/)
-- [Framer Motion](https://www.framer.com/motion/)
-
-##  License
-
-This project is proprietary. You can self-host, use, and modify it, but you cannot sell the software itself or offer paid hosted/support services whose value substantially comes from VoxAi. All rights reserved.
-
-##  Contributing
-
-For internal contributions, follow these guidelines:
-1. Create a feature branch
-2. Make your changes
-3. Ensure tests pass: `npm run test`
-4. Lint code: `npm run lint`
-5. Submit a pull request
-
-
-**Built with ❤️ using React, TypeScript, and Tailwind CSS**
-
-
+- Use strong secrets for JWT and external providers
+- Restrict CORS origins in backend configuration
+- Ensure database migrations are applied before deployment
+- Configure Stripe and OpenAI keys only in secure environments
+- Run both frontend and backend test suites in CI before release
