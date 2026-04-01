@@ -1,4 +1,4 @@
-import { prisma } from "../../infra/prisma/client.js";
+import { prisma } from "../../infra/database/prisma.js";
 import { logger } from "../../config/logger.js";
 
 export interface AuditLogEntry {

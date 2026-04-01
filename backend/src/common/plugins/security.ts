@@ -4,7 +4,7 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import { env } from "../../config/env.js";
 import { redis } from "../../infra/cache/redis.js";
-import { prisma } from "../../infra/prisma/client.js";
+import { prisma } from "../../infra/database/prisma.js";
 import { rateLimitService } from "../services/plan-rate-limit.service.js";
 import { AppError } from "../errors/app-error.js";
 import { logger } from "../../config/logger.js";

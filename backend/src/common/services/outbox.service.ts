@@ -1,6 +1,6 @@
 import { logger } from "../../config/logger.js";
 import { enqueueWithPolicy, outboxQueue } from "../../infra/queue/queues.js";
-import { prisma } from "../../infra/prisma/client.js";
+import { prisma } from "../../infra/database/prisma.js";
 
 export type DomainEvent = {
   eventId: string;
@@ -88,10 +88,8 @@ export async function processOutboxEvents(batchSize: number = 100): Promise<numb
         event,
         {
           idempotencyKey: event.id,
-          retry: {
-            attempts: 5,
-            delay: 5000,
-          },
+          attempts: 5,
+          delayMs: 5000,
         }
       );
 

@@ -70,8 +70,10 @@ class RateLimitService {
     const config = this.getConfigForPlan(planType);
     const key = `rate-limit:${userId}:voice:day`;
 
-    const current = await redis.incrbyfloat(key, minutesToUse);
-    if (current === minutesToUse) {
+    const currentRaw = await redis.incrbyfloat(key, minutesToUse);
+    const current = typeof currentRaw === "string" ? Number(currentRaw) : currentRaw;
+
+    if (current <= minutesToUse) {
       await redis.expire(key, 86400); // 24 hours
     }
 
