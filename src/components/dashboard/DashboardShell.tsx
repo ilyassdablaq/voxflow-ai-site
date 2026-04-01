@@ -10,6 +10,7 @@ import {
   KeyRound,
   LayoutDashboard,
   Link as LinkIcon,
+  LucideIcon,
   LogOut,
   Menu,
   Mic,
@@ -21,7 +22,6 @@ import { PlanBadge } from "@/components/PlanBadge";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -35,36 +35,122 @@ interface DashboardShellProps {
   children: ReactNode;
 }
 
-const navItems = [
-  { to: "/dashboard", label: "Conversations", icon: LayoutDashboard },
-  { to: "/dashboard/data-sources", label: "Data Sources", icon: Database },
-  { to: "/dashboard/workflows", label: "Workflows", icon: GitBranch },
-  { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/dashboard/voice", label: "Voice Controls", icon: Bot },
-  { to: "/dashboard/developer", label: "Developer", icon: KeyRound },
-  { to: "/dashboard/subscriptions", label: "Subscriptions", icon: CreditCard },
-  { to: "/dashboard/integrations", label: "Integrations", icon: LinkIcon },
-  { to: "/dashboard/profile", label: "Profile", icon: User },
-  { to: "/dashboard/faq", label: "Help / FAQ", icon: CircleHelp },
-];
+interface MenuItemConfig {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  end?: boolean;
+  onClick?: () => void;
+}
+
+interface MenuSectionConfig {
+  title: string;
+  items: MenuItemConfig[];
+}
+
+interface MenuSectionProps extends MenuSectionConfig {
+  onItemClick?: (item: MenuItemConfig) => void;
+}
+
+const getPlanLabel = (planName?: string) => {
+  if (!planName) return "Free Plan";
+  return planName.toLowerCase().includes("plan") ? planName : `${planName} Plan`;
+};
+
+function MenuItem({ to, label, icon: Icon, end, onClick }: MenuItemConfig) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      onClick={onClick}
+      className={({ isActive }) =>
+        `group relative flex w-full min-h-11 items-center rounded-lg px-3 text-sm font-medium transition-all duration-150 ${
+          isActive
+            ? "bg-primary/15 text-foreground shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.35)]"
+            : "text-muted-foreground hover:bg-accent/80 hover:text-foreground"
+        }`
+      }
+    >
+      <span className="flex w-full items-center gap-3">
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="leading-none">{label}</span>
+      </span>
+    </NavLink>
+  );
+}
+
+function MenuSection({ title, items, onItemClick }: MenuSectionProps) {
+  return (
+    <section className="space-y-1.5">
+      <h3 className="px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/85">{title}</h3>
+      <div className="space-y-1">
+        {items.map((item) => (
+          <MenuItem
+            key={item.to + item.label}
+            {...item}
+            onClick={() => {
+              item.onClick?.();
+              onItemClick?.(item);
+            }}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export function DashboardShell({ title, description, children }: DashboardShellProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { logout } = useAuth();
+  const { logout, subscription, user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const activeNavLabel =
-    navItems.find((item) =>
-      item.to === "/dashboard" ? location.pathname === "/dashboard" : location.pathname.startsWith(item.to),
-    )?.label ?? "Dashboard";
+  const coreItems: MenuItemConfig[] = [
+    { to: "/dashboard", label: "Conversations", icon: LayoutDashboard, end: true },
+    { to: "/dashboard/data-sources", label: "Data Sources", icon: Database },
+  ];
 
-  const handleLogout = () => {
+  const advancedItems: MenuItemConfig[] = [
+    { to: "/dashboard/workflows", label: "Workflows", icon: GitBranch },
+    { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
+    { to: "/dashboard/voice", label: "Voice Controls", icon: Bot },
+  ];
+
+  const developerItems: MenuItemConfig[] = [
+    { to: "/dashboard/developer", label: "Developer", icon: KeyRound },
+    { to: "/dashboard/integrations", label: "Integrations", icon: LinkIcon },
+  ];
+
+  const accountItems: MenuItemConfig[] = [
+    { to: "/dashboard/profile", label: "Profile", icon: User },
+    { to: "/dashboard/subscriptions", label: "Subscriptions", icon: CreditCard },
+    { to: "/dashboard/faq", label: "Help / FAQ", icon: CircleHelp },
+    { to: "/", label: "Logout", icon: LogOut, onClick: handleLogout },
+  ];
+
+  const menuSections: MenuSectionConfig[] = [
+    { title: "Core Features", items: coreItems },
+    { title: "Advanced", items: advancedItems },
+    { title: "Developer / Integrations", items: developerItems },
+    { title: "Account", items: accountItems },
+  ];
+
+  const allNavItems = menuSections.flatMap((section) => section.items);
+
+  const currentPlanLabel = getPlanLabel(subscription?.plan?.name);
+
+  function handleLogout() {
     logout();
+    setMobileMenuOpen(false);
     navigate("/");
     toast({ title: "Logged out", description: "See you soon!" });
-  };
+  }
+
+  const activeNavLabel =
+    allNavItems.find((item) =>
+      item.end ? location.pathname === item.to : item.to === "/" ? false : location.pathname.startsWith(item.to),
+    )?.label ?? "Dashboard";
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -80,38 +166,19 @@ export function DashboardShell({ title, description, children }: DashboardShellP
           </div>
         </div>
 
-        <nav className="p-3 space-y-1 flex-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === "/dashboard"}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                    isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                  }`
-                }
-              >
-                <Icon className="w-4 h-4" />
-                {item.label}
-              </NavLink>
-            );
-          })}
+        <nav className="p-3 space-y-4 flex-1 overflow-y-auto">
+          {menuSections.map((section, index) => (
+            <div key={section.title} className="space-y-4">
+              {index > 0 ? <div className="h-px bg-border/70" /> : null}
+              <MenuSection title={section.title} items={section.items} />
+            </div>
+          ))}
         </nav>
-
-        <div className="p-3 border-t border-border">
-          <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
-        </div>
       </aside>
 
       <div className="flex-1 flex flex-col">
         <header className="border-b border-border bg-card">
-          <div className="px-4 sm:px-6 lg:px-8 py-5 flex items-start sm:items-center justify-between gap-4">
+          <div className="px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4 flex items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3 min-w-0">
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
@@ -119,57 +186,44 @@ export function DashboardShell({ title, description, children }: DashboardShellP
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[88vw] max-w-sm p-0 flex flex-col">
-                  <SheetHeader className="px-6 py-5 border-b border-border text-left shrink-0">
-                    <SheetTitle>Dashboard Menu</SheetTitle>
-                    <SheetDescription>{activeNavLabel}</SheetDescription>
+                <SheetContent side="left" className="w-[90vw] max-w-sm p-0 flex flex-col duration-300">
+                  <SheetHeader className="px-5 py-4 border-b border-border text-left shrink-0">
+                    <SheetTitle className="text-base font-semibold tracking-tight">Dashboard Menu</SheetTitle>
+                    <SheetDescription className="text-xs">{activeNavLabel}</SheetDescription>
                   </SheetHeader>
-                  <div className="px-6 py-4 border-b border-border shrink-0">
-                    <PlanBadge />
-                  </div>
-                  <nav className="px-3 py-2 space-y-1 flex-1 overflow-y-auto">
-                    {navItems.map((item) => {
-                      const Icon = item.icon;
 
-                      return (
-                        <SheetClose asChild key={item.to}>
-                          <NavLink
-                            to={item.to}
-                            end={item.to === "/dashboard"}
-                            className={({ isActive }) =>
-                              `flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                                isActive
-                                  ? "bg-primary/10 text-primary"
-                                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                              }`
-                            }
-                          >
-                            <Icon className="w-4 h-4" />
-                            {item.label}
-                          </NavLink>
-                        </SheetClose>
-                      );
-                    })}
-                  </nav>
-                  <div className="px-3 py-4 border-t border-border mt-auto shrink-0">
-                    <Button
-                      variant="outline"
-                      className="w-full min-h-11 justify-start"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        handleLogout();
-                      }}
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Logout
-                    </Button>
+                  <div className="px-5 py-3.5 border-b border-border shrink-0">
+                    <div className="rounded-lg bg-accent/55 border border-border/80 px-3 py-2">
+                      <p className="text-xs text-muted-foreground">Signed in as</p>
+                      <div className="mt-1 flex items-center justify-between gap-3">
+                        <p className="truncate text-sm font-medium text-foreground">{user?.fullName ?? "Your account"}</p>
+                        <span className="rounded-md bg-secondary px-2 py-1 text-[11px] font-semibold text-secondary-foreground whitespace-nowrap">
+                          {currentPlanLabel}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+
+                  <nav className="px-3.5 py-3.5 space-y-4 flex-1 overflow-y-auto">
+                    {menuSections.map((section, index) => (
+                      <div key={section.title} className="space-y-4">
+                        {index > 0 ? <div className="h-px bg-border/70" /> : null}
+                        <MenuSection
+                          title={section.title}
+                          items={section.items}
+                          onItemClick={() => {
+                            setMobileMenuOpen(false);
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </nav>
                 </SheetContent>
               </Sheet>
 
               <div className="min-w-0">
-                <h2 className="text-xl sm:text-2xl font-bold">{title}</h2>
-                <p className="text-sm text-muted-foreground mt-1">{description}</p>
+                <h2 className="text-lg sm:text-2xl font-bold leading-tight">{title}</h2>
+                <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
               </div>
             </div>
 
