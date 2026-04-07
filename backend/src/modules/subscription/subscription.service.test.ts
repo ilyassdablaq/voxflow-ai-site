@@ -83,6 +83,8 @@ describe("SubscriptionService", () => {
       expect(result.effectivePlan).toBe("FREE");
       expect(result.isOverride).toBe(false);
       expect(result.overrideExpiresAt).toBeNull();
+      expect(result.hasActiveSubscription).toBe(false);
+      expect(result.subscriptionId).toBeNull();
       expect(mockRepository.ensureDefaultFreePlanSubscription).toHaveBeenCalledWith(
         testFixtures.user.id
       );
@@ -142,6 +144,24 @@ describe("SubscriptionService", () => {
         testFixtures.user.id
       );
     });
+
+    it("should expose active subscription metadata for paid Stripe subscriptions", async () => {
+      const paidSubscription = {
+        ...testFixtures.subscription,
+        plan: testFixtures.proPlan,
+        stripeSubscriptionId: "sub_123",
+      };
+
+      mockRepository.ensureDefaultFreePlanSubscription.mockResolvedValue(undefined);
+      mockRepository.getCurrentSubscriptionWithPlan.mockResolvedValue(paidSubscription);
+      vi.mocked(prisma.subscription.updateMany).mockResolvedValue({ count: 0 } as never);
+
+      const result = await subscriptionService.getCurrentSubscription(testFixtures.user.id);
+
+      expect(result.plan).toBe("PRO");
+      expect(result.hasActiveSubscription).toBe(true);
+      expect(result.subscriptionId).toBe("sub_123");
+    });
   });
 
   describe("getAvailablePlans", () => {
@@ -158,7 +178,7 @@ describe("SubscriptionService", () => {
   });
 
   describe("cancelAtPeriodEnd", () => {
-    it("should return free subscription immediately without cancellation", async () => {
+    it("should block cancellation for free subscriptions", async () => {
       const freeSubscription = {
         ...testFixtures.subscription,
         plan: testFixtures.plan,
@@ -168,9 +188,14 @@ describe("SubscriptionService", () => {
       mockRepository.getCurrentSubscriptionWithPlan.mockResolvedValue(freeSubscription);
       vi.mocked(prisma.subscription.updateMany).mockResolvedValue({ count: 0 } as never);
 
-      const result = await subscriptionService.cancelAtPeriodEnd(testFixtures.user.id);
-
-      expect(result.plan.key).toBe("free");
+      await expect(
+        subscriptionService.cancelAtPeriodEnd(testFixtures.user.id)
+      ).rejects.toThrow(
+        expect.objectContaining({
+          statusCode: 400,
+          code: "NO_ACTIVE_SUBSCRIPTION",
+        })
+      );
       expect(vi.mocked(stripeService.scheduleCancellationAtPeriodEnd)).not.toHaveBeenCalled();
     });
 
@@ -211,7 +236,7 @@ describe("SubscriptionService", () => {
       });
     });
 
-    it("should downgrade non-Stripe subscriptions to free immediately", async () => {
+    it("should block cancellation for paid plans without Stripe subscription", async () => {
       const nonStripeSubscription = {
         ...testFixtures.subscription,
         stripeSubscriptionId: null,
@@ -228,12 +253,15 @@ describe("SubscriptionService", () => {
       });
       vi.mocked(prisma.subscription.updateMany).mockResolvedValue({ count: 0 } as never);
 
-      await subscriptionService.cancelAtPeriodEnd(testFixtures.user.id);
-
-      expect(mockPlanService.changePlan).toHaveBeenCalledWith(
-        testFixtures.user.id,
-        "free"
+      await expect(
+        subscriptionService.cancelAtPeriodEnd(testFixtures.user.id)
+      ).rejects.toThrow(
+        expect.objectContaining({
+          statusCode: 400,
+          code: "NO_ACTIVE_SUBSCRIPTION",
+        })
       );
+      expect(mockPlanService.changePlan).not.toHaveBeenCalled();
     });
 
     it("should throw SUBSCRIPTION_NOT_FOUND when no subscription exists", async () => {

@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { userService } from "@/services/user.service";
 import { useAuth } from "@/hooks/use-auth";
@@ -27,12 +27,15 @@ export default function Profile() {
   const { logout, subscription, refreshSubscription } = useAuth();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmCancelPlan, setConfirmCancelPlan] = useState(false);
+  const handledErrorAtRef = useRef<number | null>(null);
+  const canCancelPaidPlan = Boolean(subscription?.hasActiveSubscription && subscription?.plan !== "FREE");
 
   const {
     data: profile,
     isLoading,
     isError,
     error,
+    errorUpdatedAt,
     refetch,
   } = useQuery({
     queryKey: ["my-profile"],
@@ -47,6 +50,17 @@ export default function Profile() {
   });
 
   useEffect(() => {
+    if (!isError) {
+      handledErrorAtRef.current = null;
+      return;
+    }
+
+    if (!error || handledErrorAtRef.current === errorUpdatedAt) {
+      return;
+    }
+
+    handledErrorAtRef.current = errorUpdatedAt;
+
     if (!isError || !error) {
       return;
     }
@@ -66,7 +80,7 @@ export default function Profile() {
       description: error instanceof Error ? error.message : "Please try again.",
       variant: "destructive",
     });
-  }, [error, isError, logout, navigate, toast]);
+  }, [error, errorUpdatedAt, isError, logout, navigate, toast]);
 
   const deleteAccountMutation = useMutation({
     mutationFn: () => userService.deleteMyAccount(),
@@ -88,7 +102,13 @@ export default function Profile() {
   });
 
   const cancelPlanMutation = useMutation({
-    mutationFn: () => subscriptionService.cancelToFreePlan(),
+    mutationFn: () => {
+      if (!subscription?.hasActiveSubscription) {
+        throw new Error("No active subscription to cancel");
+      }
+
+      return subscriptionService.cancelToFreePlan();
+    },
     onSuccess: async () => {
       await refreshSubscription();
       setConfirmCancelPlan(false);
@@ -161,7 +181,7 @@ export default function Profile() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              {subscription?.plan !== "FREE" ? (
+              {canCancelPaidPlan ? (
                 <Button
                   variant="secondary"
                   onClick={() => setConfirmCancelPlan(true)}
@@ -170,8 +190,8 @@ export default function Profile() {
                   {cancelPlanMutation.isPending ? "Cancelling..." : "Cancel Subscription (Back to Free)"}
                 </Button>
               ) : (
-                <Button variant="secondary" disabled>
-                  You are already on the Free plan
+                <Button variant="secondary" onClick={() => navigate("/dashboard/subscriptions")}>
+                  Upgrade Plan
                 </Button>
               )}
 

@@ -40,6 +40,8 @@ describe("useAuth Hook", () => {
     effectivePlan: "FREE" as const,
     isOverride: false,
     overrideExpiresAt: null,
+    hasActiveSubscription: false,
+    subscriptionId: null,
   };
 
   const mockProSubscription = {

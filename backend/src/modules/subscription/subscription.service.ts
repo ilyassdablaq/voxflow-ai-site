@@ -34,6 +34,10 @@ export class SubscriptionService {
     return subscription;
   }
 
+  private hasCancelablePaidSubscription(subscription: { plan: { key: string }; stripeSubscriptionId: string | null }): boolean {
+    return subscription.plan.key !== 'free' && Boolean(subscription.stripeSubscriptionId);
+  }
+
   async getCurrentSubscription(userId: string) {
     const subscription = await this.getCurrentBillingSubscription(userId);
 
@@ -45,6 +49,8 @@ export class SubscriptionService {
       effectivePlan: effectivePlan.type,
       isOverride: effectivePlan.source === "admin_override",
       overrideExpiresAt: activeOverride?.expiresAt ?? null,
+      hasActiveSubscription: this.hasCancelablePaidSubscription(subscription),
+      subscriptionId: this.hasCancelablePaidSubscription(subscription) ? subscription.stripeSubscriptionId : null,
     };
   }
 
@@ -55,26 +61,20 @@ export class SubscriptionService {
   async cancelAtPeriodEnd(userId: string) {
     const currentSubscription = await this.getCurrentBillingSubscription(userId);
 
-    if (currentSubscription.plan.key === 'free') {
-      return currentSubscription;
+    if (!this.hasCancelablePaidSubscription(currentSubscription)) {
+      throw new AppError(400, 'NO_ACTIVE_SUBSCRIPTION', 'No active subscription to cancel');
     }
 
-    if (currentSubscription.stripeSubscriptionId) {
-      const cancellation = await stripeService.scheduleCancellationAtPeriodEnd(currentSubscription.stripeSubscriptionId);
+    const cancellation = await stripeService.scheduleCancellationAtPeriodEnd(currentSubscription.stripeSubscriptionId as string);
 
-      await prisma.subscription.update({
-        where: { id: currentSubscription.id },
-        data: {
-          status: 'ACTIVE',
-          endsAt: cancellation.currentPeriodEnd,
-        },
-      });
+    await prisma.subscription.update({
+      where: { id: currentSubscription.id },
+      data: {
+        status: 'ACTIVE',
+        endsAt: cancellation.currentPeriodEnd,
+      },
+    });
 
-      return this.getCurrentBillingSubscription(userId);
-    }
-
-    // Non-Stripe subscriptions can be downgraded immediately.
-    await this.planService.changePlan(userId, 'free');
     return this.getCurrentBillingSubscription(userId);
   }
 
