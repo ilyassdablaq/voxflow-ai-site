@@ -28,6 +28,7 @@ export default function Profile() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmCancelPlan, setConfirmCancelPlan] = useState(false);
   const handledErrorAtRef = useRef<number | null>(null);
+  const canCancelPaidPlan = Boolean(subscription?.hasActiveSubscription && subscription?.plan !== "FREE");
 
   const {
     data: profile,
@@ -101,7 +102,13 @@ export default function Profile() {
   });
 
   const cancelPlanMutation = useMutation({
-    mutationFn: () => subscriptionService.cancelToFreePlan(),
+    mutationFn: () => {
+      if (!subscription?.hasActiveSubscription) {
+        throw new Error("No active subscription to cancel");
+      }
+
+      return subscriptionService.cancelToFreePlan();
+    },
     onSuccess: async () => {
       await refreshSubscription();
       setConfirmCancelPlan(false);
@@ -174,7 +181,7 @@ export default function Profile() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              {subscription?.plan !== "FREE" ? (
+              {canCancelPaidPlan ? (
                 <Button
                   variant="secondary"
                   onClick={() => setConfirmCancelPlan(true)}
@@ -183,8 +190,8 @@ export default function Profile() {
                   {cancelPlanMutation.isPending ? "Cancelling..." : "Cancel Subscription (Back to Free)"}
                 </Button>
               ) : (
-                <Button variant="secondary" disabled>
-                  You are already on the Free plan
+                <Button variant="secondary" onClick={() => navigate("/dashboard/subscriptions")}>
+                  Upgrade Plan
                 </Button>
               )}
 

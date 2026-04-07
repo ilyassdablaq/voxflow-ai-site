@@ -18,6 +18,8 @@ export interface CurrentSubscription {
   effectivePlan: "FREE" | "PRO" | "ENTERPRISE";
   isOverride: boolean;
   overrideExpiresAt: string | null;
+  hasActiveSubscription: boolean;
+  subscriptionId: string | null;
 }
 
 export interface SubscriptionRecord {
