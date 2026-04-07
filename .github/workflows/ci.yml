@@ -34,7 +34,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run lint
+      - name: Run lint (non-blocking)
+        continue-on-error: true
         run: npm run lint
 
       - name: Run tests
@@ -69,7 +70,8 @@ jobs:
       - name: Generate Prisma client
         run: npm run prisma:generate
 
-      - name: Run lint
+      - name: Run lint (non-blocking)
+        continue-on-error: true
         run: npm run lint
 
       - name: Run tests

@@ -131,7 +131,7 @@ export class EmailService {
         `<p><strong>Company:</strong> ${escapeHtml(payload.company || "-")}</p>`,
         `<p><strong>Created At:</strong> ${payload.createdAt.toISOString()}</p>`,
         "<hr />",
-        `<p style=\"white-space: pre-wrap;\">${escapeHtml(payload.message)}</p>`,
+        `<p style="white-space: pre-wrap;">${escapeHtml(payload.message)}</p>`,
       ].join(""),
     });
   }
@@ -151,8 +151,8 @@ export class EmailService {
         "<div style=\"font-family: Arial, sans-serif; color: #111; line-height: 1.5;\">",
         "<h2 style=\"margin-bottom: 12px;\">Reset your password</h2>",
         "<p>We received a request to reset your password.</p>",
-        `<p><a href=\"${escapeHtml(payload.resetLink)}\" style=\"display:inline-block;padding:10px 16px;background:#111;color:#fff;text-decoration:none;border-radius:6px;\">Reset password</a></p>`,
-        `<p>If the button does not work, use this link:<br /><a href=\"${escapeHtml(payload.resetLink)}\">${escapeHtml(payload.resetLink)}</a></p>`,
+        `<p><a href="${escapeHtml(payload.resetLink)}" style="display:inline-block;padding:10px 16px;background:#111;color:#fff;text-decoration:none;border-radius:6px;">Reset password</a></p>`,
+        `<p>If the button does not work, use this link:<br /><a href="${escapeHtml(payload.resetLink)}">${escapeHtml(payload.resetLink)}</a></p>`,
         "<p>This link expires in 1 hour. If you did not request this, you can ignore this email.</p>",
         "</div>",
       ].join(""),
