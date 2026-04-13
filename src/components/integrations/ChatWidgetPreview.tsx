@@ -1,3 +1,4 @@
+import { MessageCircle, MessageSquare, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ChatWidgetPreviewProps {
@@ -5,6 +6,8 @@ interface ChatWidgetPreviewProps {
   themeColor: string;
   position: "bottom-right" | "bottom-left";
   language: string;
+  launcherText: string;
+  launcherIcon: "chat" | "message" | "sparkles";
 }
 
 const sampleMessages = [
@@ -35,9 +38,16 @@ function isLightColor(color: string) {
   return luminance > 0.64;
 }
 
-export function ChatWidgetPreview({ botName, themeColor, position, language }: ChatWidgetPreviewProps) {
+export function ChatWidgetPreview({ botName, themeColor, position, language, launcherText, launcherIcon }: ChatWidgetPreviewProps) {
   const textTone = isLightColor(themeColor) ? "#0f172a" : "#ffffff";
   const accentTone = isLightColor(themeColor) ? "rgba(15, 23, 42, 0.18)" : "rgba(255, 255, 255, 0.18)";
+  const launcherLabel = launcherText.trim();
+
+  const LauncherIcon = launcherIcon === "sparkles"
+    ? Sparkles
+    : launcherIcon === "message"
+      ? MessageSquare
+      : MessageCircle;
 
   return (
     <div className="overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-4 shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
@@ -59,7 +69,10 @@ export function ChatWidgetPreview({ botName, themeColor, position, language }: C
         </div>
 
         <div className="relative mx-auto flex h-full max-w-[460px] flex-col overflow-hidden rounded-[30px] border border-slate-200/10 bg-white/95 shadow-[0_24px_60px_rgba(15,23,42,0.22)] backdrop-blur">
-          <div className="flex items-center justify-between bg-[linear-gradient(135deg,theme(colors.indigo.600),theme(colors.indigo.500))] px-4 py-3 text-white">
+          <div
+            className="flex items-center justify-between px-4 py-3 text-white"
+            style={{ background: `linear-gradient(135deg, ${themeColor}, color-mix(in srgb, ${themeColor} 72%, #ffffff 28%))` }}
+          >
             <div>
               <p className="text-base font-semibold tracking-tight">{botName}</p>
             </div>
@@ -111,10 +124,17 @@ export function ChatWidgetPreview({ botName, themeColor, position, language }: C
         <div className={cn("absolute bottom-4 flex items-center gap-3", position === "bottom-left" ? "left-4" : "right-4")}>
           <button
             type="button"
-            className="flex h-14 w-14 items-center justify-center rounded-full text-sm font-semibold shadow-[0_18px_30px_rgba(15,23,42,0.28)]"
+            className={cn(
+              "flex h-14 items-center justify-center rounded-full text-sm font-semibold shadow-[0_18px_30px_rgba(15,23,42,0.28)]",
+              launcherLabel ? "px-4" : "w-14",
+            )}
             style={{ background: themeColor, color: textTone }}
           >
-            Chat
+            {launcherLabel ? (
+              <span className="max-w-[120px] truncate">{launcherLabel}</span>
+            ) : (
+              <LauncherIcon className="h-5 w-5" />
+            )}
           </button>
         </div>
       </div>

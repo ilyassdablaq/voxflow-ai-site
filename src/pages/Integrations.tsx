@@ -20,6 +20,12 @@ const THEME_PRESETS = [
   { label: "Slate", value: "#334155" },
 ];
 
+const LAUNCHER_ICON_OPTIONS: Array<{ label: string; value: "chat" | "message" | "sparkles" }> = [
+  { label: "Chat bubble", value: "chat" },
+  { label: "Message", value: "message" },
+  { label: "Sparkles", value: "sparkles" },
+];
+
 const HEX_COLOR_REGEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 function toSafeHexColor(value?: string | null, fallback = "#5A67D8") {
@@ -73,6 +79,8 @@ export default function Integrations() {
   const [themeColor, setThemeColor] = useState("#5A67D8");
   const [position, setPosition] = useState<"bottom-right" | "bottom-left">("bottom-right");
   const [language, setLanguage] = useState("en");
+  const [launcherText, setLauncherText] = useState("Chat");
+  const [launcherIcon, setLauncherIcon] = useState<"chat" | "message" | "sparkles">("chat");
 
   useEffect(() => {
     if (!data) {
@@ -83,11 +91,15 @@ export default function Integrations() {
     setThemeColor(toSafeHexColor(data.themeColor));
     setPosition(data.position);
     setLanguage(data.language);
+    setLauncherText((data.launcherText || "Chat").trim());
+    setLauncherIcon(data.launcherIcon || "chat");
   }, [data]);
 
   const effectiveData = useMemo(() => {
     const nextBotName = (botName || data?.botName || "Chatbot").trim();
     const nextTheme = toSafeHexColor(themeColor || data?.themeColor || "#5A67D8");
+    const nextLauncherText = (launcherText || data?.launcherText || "Chat").trim();
+    const nextLauncherIcon = launcherIcon || data?.launcherIcon || "chat";
 
     return data
       ? {
@@ -96,9 +108,11 @@ export default function Integrations() {
           themeColor: nextTheme,
           position,
           language,
+          launcherText: nextLauncherText,
+          launcherIcon: nextLauncherIcon,
         }
       : null;
-  }, [botName, data, language, position, themeColor]);
+  }, [botName, data, language, launcherIcon, launcherText, position, themeColor]);
 
   const selectedThemePreset = useMemo(() => {
     const normalized = (themeColor || data?.themeColor || "").toLowerCase();
@@ -114,6 +128,8 @@ export default function Integrations() {
         themeColor: toSafeHexColor(themeColor || data?.themeColor || "#5A67D8"),
         position,
         language,
+        launcherText: (launcherText || data?.launcherText || "Chat").trim(),
+        launcherIcon: launcherIcon || data?.launcherIcon || "chat",
       }),
     onSuccess: (updated) => {
       void queryClient.setQueryData(["integration-settings"], updated);
@@ -121,6 +137,8 @@ export default function Integrations() {
       setThemeColor(updated.themeColor);
       setPosition(updated.position);
       setLanguage(updated.language);
+      setLauncherText(updated.launcherText);
+      setLauncherIcon(updated.launcherIcon);
       toast({ title: "Saved", description: "Integration settings updated." });
     },
     onError: (error) => {
@@ -154,7 +172,7 @@ export default function Integrations() {
 
     const scriptHost = typeof window !== "undefined" ? window.location.origin : "https://yourapp.com";
 
-    return `<script src="${scriptHost}/chatbot.js" data-embed-key="${effectiveData.embedKey}" data-api-base="${API_BASE}" data-theme="${effectiveData.themeColor}" data-position="${effectiveData.position}" data-language="${effectiveData.language}" data-bot-name="${effectiveData.botName}"><\/script>`;
+    return `<script src="${scriptHost}/chatbot.js" data-embed-key="${effectiveData.embedKey}" data-api-base="${API_BASE}" data-theme="${effectiveData.themeColor}" data-position="${effectiveData.position}" data-language="${effectiveData.language}" data-bot-name="${effectiveData.botName}" data-launcher-text="${effectiveData.launcherText}" data-launcher-icon="${effectiveData.launcherIcon}"><\/script>`;
   }, [effectiveData]);
 
   const copySnippet = async () => {
@@ -250,6 +268,34 @@ export default function Integrations() {
               </select>
             </div>
 
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Launcher Text</label>
+                <Input
+                  value={launcherText}
+                  onChange={(event) => setLauncherText(event.target.value.slice(0, 20))}
+                  placeholder="Chat"
+                />
+                <p className="text-xs text-muted-foreground">Leave text short to keep the floating button compact.</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Launcher Icon</label>
+                <select
+                  className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
+                  value={launcherIcon}
+                  onChange={(event) => setLauncherIcon(event.target.value as "chat" | "message" | "sparkles")}
+                >
+                  {LAUNCHER_ICON_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">If launcher text is empty, the icon is shown as the button content.</p>
+              </div>
+            </div>
+
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !canSave} className="min-h-11">
                 {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -279,6 +325,8 @@ export default function Integrations() {
               themeColor={effectiveData?.themeColor ?? data.themeColor}
               position={effectiveData?.position ?? data.position}
               language={effectiveData?.language ?? data.language}
+              launcherText={effectiveData?.launcherText ?? data.launcherText}
+              launcherIcon={effectiveData?.launcherIcon ?? data.launcherIcon}
             />
           </IntegrationPreviewBoundary>
 

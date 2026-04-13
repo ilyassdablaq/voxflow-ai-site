@@ -7,6 +7,8 @@ type IntegrationSettingsRecord = {
   themeColor: string;
   position: "bottom-right" | "bottom-left";
   language: string;
+  launcherText: string;
+  launcherIcon: "chat" | "message" | "sparkles";
   embedKey: string;
   updatedAt: Date;
 };
@@ -30,9 +32,21 @@ export class IntegrationRepository {
         theme_color TEXT NOT NULL,
         position TEXT NOT NULL,
         language TEXT NOT NULL,
+        launcher_text TEXT NOT NULL DEFAULT 'Chat',
+        launcher_icon TEXT NOT NULL DEFAULT 'chat',
         embed_key TEXT UNIQUE NOT NULL,
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
       )
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE integration_settings
+      ADD COLUMN IF NOT EXISTS launcher_text TEXT NOT NULL DEFAULT 'Chat'
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE integration_settings
+      ADD COLUMN IF NOT EXISTS launcher_icon TEXT NOT NULL DEFAULT 'chat'
     `);
 
     this.initialized = true;
@@ -44,6 +58,8 @@ export class IntegrationRepository {
     theme_color: string;
     position: "bottom-right" | "bottom-left";
     language: string;
+    launcher_text: string | null;
+    launcher_icon: "chat" | "message" | "sparkles" | null;
     embed_key: string;
     updated_at: Date;
   }): IntegrationSettingsRecord {
@@ -53,6 +69,8 @@ export class IntegrationRepository {
       themeColor: row.theme_color,
       position: row.position,
       language: row.language,
+      launcherText: row.launcher_text ?? "Chat",
+      launcherIcon: row.launcher_icon ?? "chat",
       embedKey: row.embed_key,
       updatedAt: row.updated_at,
     };
@@ -68,12 +86,14 @@ export class IntegrationRepository {
         theme_color: string;
         position: "bottom-right" | "bottom-left";
         language: string;
+        launcher_text: string | null;
+        launcher_icon: "chat" | "message" | "sparkles" | null;
         embed_key: string;
         updated_at: Date;
       }>
     >(
       `
-        SELECT user_id, bot_name, theme_color, position, language, embed_key, updated_at
+        SELECT user_id, bot_name, theme_color, position, language, launcher_text, launcher_icon, embed_key, updated_at
         FROM integration_settings
         WHERE user_id = $1
       `,
@@ -87,29 +107,40 @@ export class IntegrationRepository {
     const embedKey = createEmbedKey();
     await prisma.$executeRawUnsafe(
       `
-        INSERT INTO integration_settings (user_id, bot_name, theme_color, position, language, embed_key, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        INSERT INTO integration_settings (user_id, bot_name, theme_color, position, language, launcher_text, launcher_icon, embed_key, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
       `,
       userId,
-      "Assistant",
+      "Chatbot",
       "#5A67D8",
       "bottom-right",
       "en",
+      "Chat",
+      "chat",
       embedKey,
     );
 
     return {
       userId,
-      botName: "Assistant",
+      botName: "Chatbot",
       themeColor: "#5A67D8",
       position: "bottom-right",
       language: "en",
+      launcherText: "Chat",
+      launcherIcon: "chat",
       embedKey,
       updatedAt: new Date(),
     } as IntegrationSettingsRecord;
   }
 
-  async updateSettings(userId: string, payload: { botName: string; themeColor: string; position: "bottom-right" | "bottom-left"; language: string }) {
+  async updateSettings(userId: string, payload: {
+    botName: string;
+    themeColor: string;
+    position: "bottom-right" | "bottom-left";
+    language: string;
+    launcherText: string;
+    launcherIcon: "chat" | "message" | "sparkles";
+  }) {
     await this.ensureTable();
 
     await this.getOrCreateByUserId(userId);
@@ -121,6 +152,8 @@ export class IntegrationRepository {
             theme_color = $3,
             position = $4,
             language = $5,
+            launcher_text = $6,
+            launcher_icon = $7,
             updated_at = NOW()
         WHERE user_id = $1
       `,
@@ -129,6 +162,8 @@ export class IntegrationRepository {
       payload.themeColor,
       payload.position,
       payload.language,
+      payload.launcherText,
+      payload.launcherIcon,
     );
 
     return this.getOrCreateByUserId(userId);
@@ -164,12 +199,14 @@ export class IntegrationRepository {
         theme_color: string;
         position: "bottom-right" | "bottom-left";
         language: string;
+        launcher_text: string | null;
+        launcher_icon: "chat" | "message" | "sparkles" | null;
         embed_key: string;
         updated_at: Date;
       }>
     >(
       `
-        SELECT user_id, bot_name, theme_color, position, language, embed_key, updated_at
+        SELECT user_id, bot_name, theme_color, position, language, launcher_text, launcher_icon, embed_key, updated_at
         FROM integration_settings
         WHERE embed_key = $1
       `,

@@ -6,6 +6,8 @@ export interface IntegrationSettings {
   themeColor: string;
   position: "bottom-right" | "bottom-left";
   language: string;
+  launcherText: string;
+  launcherIcon: "chat" | "message" | "sparkles";
   embedKey: string;
   updatedAt: string;
 }
@@ -15,7 +17,14 @@ export const integrationService = {
     return apiClient.get<IntegrationSettings>("/api/integrations/settings");
   },
 
-  updateSettings(payload: { botName: string; themeColor: string; position: "bottom-right" | "bottom-left"; language: string }) {
+  updateSettings(payload: {
+    botName: string;
+    themeColor: string;
+    position: "bottom-right" | "bottom-left";
+    language: string;
+    launcherText: string;
+    launcherIcon: "chat" | "message" | "sparkles";
+  }) {
     return apiClient.put<IntegrationSettings>("/api/integrations/settings", payload);
   },
 

@@ -21,6 +21,8 @@
   var position = currentScript.getAttribute("data-position") || "bottom-right";
   var language = currentScript.getAttribute("data-language") || "en";
   var botName = (currentScript.getAttribute("data-bot-name") || "Chatbot").trim() || "Chatbot";
+  var launcherText = (currentScript.getAttribute("data-launcher-text") || "Chat").trim();
+  var launcherIcon = currentScript.getAttribute("data-launcher-icon") || "chat";
   var side = position === "bottom-left" ? "left" : "right";
 
   var root = document.createElement("div");
@@ -91,7 +93,57 @@
   launcher.className = "launcher";
   launcher.type = "button";
   launcher.setAttribute("aria-label", "Open chat");
-  launcher.innerText = "Chat";
+
+  function createLauncherIcon(iconName) {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+
+    var pathOne = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    var pathTwo = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+    if (iconName === "sparkles") {
+      pathOne.setAttribute("d", "M12 3l1.6 3.7L17 8.3l-3.4 1.6L12 13.6l-1.6-3.7L7 8.3l3.4-1.6L12 3z");
+      pathTwo.setAttribute("d", "M18.5 13l.8 1.8L21 15.6l-1.7.8-.8 1.8-.8-1.8-1.7-.8 1.7-.8.8-1.8zM5.5 14l1 2.3L9 17.3l-2.5 1L5.5 21l-1-2.7L2 17.3l2.5-1L5.5 14z");
+      pathOne.setAttribute("fill", "currentColor");
+      pathTwo.setAttribute("fill", "currentColor");
+      svg.appendChild(pathOne);
+      svg.appendChild(pathTwo);
+      return svg;
+    }
+
+    pathOne.setAttribute("d", "M21 12a8 8 0 0 1-8 8H8l-5 3 1.7-4.1A8 8 0 1 1 21 12z");
+    pathOne.setAttribute("fill", "none");
+    pathOne.setAttribute("stroke", "currentColor");
+    pathOne.setAttribute("stroke-width", "2");
+    pathOne.setAttribute("stroke-linecap", "round");
+    pathOne.setAttribute("stroke-linejoin", "round");
+    svg.appendChild(pathOne);
+
+    if (iconName === "message") {
+      pathTwo.setAttribute("d", "M8 11h8M8 15h5");
+      pathTwo.setAttribute("fill", "none");
+      pathTwo.setAttribute("stroke", "currentColor");
+      pathTwo.setAttribute("stroke-width", "2");
+      pathTwo.setAttribute("stroke-linecap", "round");
+      svg.appendChild(pathTwo);
+    }
+
+    return svg;
+  }
+
+  if (launcherText) {
+    launcher.innerText = launcherText;
+    launcher.style.width = "auto";
+    launcher.style.minWidth = "56px";
+    launcher.style.padding = "0 16px";
+  } else {
+    launcher.innerHTML = "";
+    launcher.appendChild(createLauncherIcon(launcherIcon));
+    launcher.style.width = "56px";
+    launcher.style.minWidth = "56px";
+    launcher.style.padding = "0";
+  }
 
   shell.appendChild(panel);
   shell.appendChild(launcher);
@@ -209,15 +261,20 @@
       }, 20000);
 
       try {
+        var requestBody = {
+          embedKey: embedKey,
+          message: text,
+          language: language,
+        };
+
+        if (conversationId) {
+          requestBody.conversationId = conversationId;
+        }
+
         var response = await fetch(apiBase + "/api/embed/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            embedKey: embedKey,
-            message: text,
-            conversationId: conversationId,
-            language: language,
-          }),
+          body: JSON.stringify(requestBody),
           signal: controller.signal,
         });
 
