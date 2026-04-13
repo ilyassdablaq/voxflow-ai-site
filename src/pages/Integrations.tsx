@@ -79,7 +79,7 @@ export default function Integrations() {
   const [themeColor, setThemeColor] = useState("#5A67D8");
   const [position, setPosition] = useState<"bottom-right" | "bottom-left">("bottom-right");
   const [language, setLanguage] = useState("en");
-  const [launcherText, setLauncherText] = useState("Chat");
+  const [launcherText, setLauncherText] = useState("");
   const [launcherIcon, setLauncherIcon] = useState<"chat" | "message" | "sparkles">("chat");
 
   useEffect(() => {
@@ -87,18 +87,18 @@ export default function Integrations() {
       return;
     }
 
-    setBotName(data.botName);
+    setBotName(data.botName ?? "");
     setThemeColor(toSafeHexColor(data.themeColor));
     setPosition(data.position);
     setLanguage(data.language);
-    setLauncherText((data.launcherText || "Chat").trim());
+    setLauncherText((data.launcherText ?? "").trim());
     setLauncherIcon(data.launcherIcon || "chat");
   }, [data]);
 
   const effectiveData = useMemo(() => {
-    const nextBotName = (botName || data?.botName || "Chatbot").trim();
+    const nextBotName = botName.trim();
     const nextTheme = toSafeHexColor(themeColor || data?.themeColor || "#5A67D8");
-    const nextLauncherText = (launcherText || data?.launcherText || "Chat").trim();
+    const nextLauncherText = launcherText.trim();
     const nextLauncherIcon = launcherIcon || data?.launcherIcon || "chat";
 
     return data
@@ -119,26 +119,26 @@ export default function Integrations() {
     return THEME_PRESETS.find((preset) => preset.value.toLowerCase() === normalized)?.value ?? "custom";
   }, [data?.themeColor, themeColor]);
 
-  const canSave = (botName || data?.botName || "").trim().length > 0;
+  const canSave = botName.trim().length > 0;
 
   const saveMutation = useMutation({
     mutationFn: () =>
       integrationService.updateSettings({
-        botName: (botName || data?.botName || "Chatbot").trim(),
+        botName: botName.trim(),
         themeColor: toSafeHexColor(themeColor || data?.themeColor || "#5A67D8"),
         position,
         language,
-        launcherText: (launcherText || data?.launcherText || "Chat").trim(),
+        launcherText: launcherText.trim(),
         launcherIcon: launcherIcon || data?.launcherIcon || "chat",
       }),
     onSuccess: (updated) => {
       void queryClient.setQueryData(["integration-settings"], updated);
-      setBotName(updated.botName);
+      setBotName(updated.botName ?? botName.trim());
       setThemeColor(updated.themeColor);
       setPosition(updated.position);
       setLanguage(updated.language);
-      setLauncherText(updated.launcherText);
-      setLauncherIcon(updated.launcherIcon);
+      setLauncherText(updated.launcherText ?? launcherText.trim());
+      setLauncherIcon(updated.launcherIcon ?? launcherIcon);
       toast({ title: "Saved", description: "Integration settings updated." });
     },
     onError: (error) => {
@@ -199,10 +199,13 @@ export default function Integrations() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Bot Name</label>
               <Input
-                value={botName || data.botName}
+                value={botName}
                 onChange={(event) => setBotName(event.target.value)}
                 placeholder="z. B. VoxFlow Concierge"
               />
+              {botName.trim().length === 0 ? (
+                <p className="text-xs text-destructive">Bot name is required.</p>
+              ) : null}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
