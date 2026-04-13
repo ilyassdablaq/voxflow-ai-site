@@ -3,6 +3,7 @@ import { z } from "zod";
 export const integrationSettingsSchema = z.object({
   botName: z.string().min(1).max(80),
   themeColor: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/),
+  themeMode: z.enum(["light", "dark"]).default("light"),
   position: z.enum(["bottom-right", "bottom-left"]),
   language: z.string().min(2).max(8),
   launcherText: z.string().max(20).default("Chat"),

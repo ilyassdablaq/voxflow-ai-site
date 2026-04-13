@@ -80,6 +80,7 @@ export default function Integrations() {
 
   const [botName, setBotName] = useState("");
   const [themeColor, setThemeColor] = useState("#5A67D8");
+  const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
   const [position, setPosition] = useState<"bottom-right" | "bottom-left">("bottom-right");
   const [language, setLanguage] = useState("en");
   const [launcherText, setLauncherText] = useState("");
@@ -104,6 +105,7 @@ export default function Integrations() {
 
     setBotName(data.botName ?? "");
     setThemeColor(toSafeHexColor(data.themeColor));
+    setThemeMode(data.themeMode ?? "light");
     setPosition(data.position);
     setLanguage(data.language);
     setLauncherText((previous) => (typeof data.launcherText === "string" ? data.launcherText.trim() : previous));
@@ -121,13 +123,14 @@ export default function Integrations() {
           ...data,
           botName: nextBotName,
           themeColor: nextTheme,
+          themeMode,
           position,
           language,
           launcherText: nextLauncherText,
           launcherIcon: nextLauncherIcon,
         }
       : null;
-  }, [botName, data, language, launcherIcon, launcherText, position, themeColor]);
+  }, [botName, data, language, launcherIcon, launcherText, position, themeColor, themeMode]);
 
   const selectedThemePreset = useMemo(() => {
     const normalized = (themeColor || data?.themeColor || "").toLowerCase();
@@ -141,6 +144,7 @@ export default function Integrations() {
       integrationService.updateSettings({
         botName: botName.trim(),
         themeColor: toSafeHexColor(themeColor || data?.themeColor || "#5A67D8"),
+        themeMode,
         position,
         language,
         launcherText: launcherText.trim(),
@@ -150,6 +154,7 @@ export default function Integrations() {
       void queryClient.setQueryData(["integration-settings"], updated);
       setBotName(updated.botName ?? botName.trim());
       setThemeColor(updated.themeColor);
+      setThemeMode(updated.themeMode ?? themeMode);
       setPosition(updated.position);
       setLanguage(updated.language);
       setLauncherText(updated.launcherText ?? launcherText.trim());
@@ -187,7 +192,7 @@ export default function Integrations() {
 
     const scriptHost = typeof window !== "undefined" ? window.location.origin : "https://yourapp.com";
 
-    return `<script src="${scriptHost}/chatbot.js" data-embed-key="${effectiveData.embedKey}" data-api-base="${API_BASE}" data-theme="${effectiveData.themeColor}" data-position="${effectiveData.position}" data-language="${effectiveData.language}" data-bot-name="${effectiveData.botName}" data-launcher-text="${effectiveData.launcherText}" data-launcher-icon="${effectiveData.launcherIcon}" data-loading-style="${loadingStyle}"><\/script>`;
+    return `<script src="${scriptHost}/chatbot.js" data-embed-key="${effectiveData.embedKey}" data-api-base="${API_BASE}" data-theme="${effectiveData.themeColor}" data-theme-mode="${effectiveData.themeMode}" data-position="${effectiveData.position}" data-language="${effectiveData.language}" data-bot-name="${effectiveData.botName}" data-launcher-text="${effectiveData.launcherText}" data-launcher-icon="${effectiveData.launcherIcon}" data-loading-style="${loadingStyle}"><\/script>`;
   }, [effectiveData, loadingStyle]);
 
   const copySnippet = async () => {
@@ -257,6 +262,18 @@ export default function Integrations() {
                     </span>
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Theme Mode</label>
+                <select
+                  className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
+                  value={themeMode}
+                  onChange={(event) => setThemeMode(event.target.value as "light" | "dark")}
+                >
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </select>
               </div>
 
               <div className="space-y-2">
@@ -345,6 +362,7 @@ export default function Integrations() {
               language={effectiveData?.language ?? data.language}
               launcherText={effectiveData?.launcherText ?? data.launcherText ?? "Chat"}
               launcherIcon={effectiveData?.launcherIcon ?? data.launcherIcon ?? "chat"}
+              themeMode={effectiveData?.themeMode ?? data.themeMode ?? "light"}
               loadingStyle={loadingStyle}
             />
           </IntegrationPreviewBoundary>

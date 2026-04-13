@@ -4,6 +4,7 @@ export interface IntegrationSettings {
   userId: string;
   botName: string;
   themeColor: string;
+  themeMode: "light" | "dark";
   position: "bottom-right" | "bottom-left";
   language: string;
   launcherText: string;
@@ -20,6 +21,7 @@ export const integrationService = {
   updateSettings(payload: {
     botName: string;
     themeColor: string;
+    themeMode: "light" | "dark";
     position: "bottom-right" | "bottom-left";
     language: string;
     launcherText: string;

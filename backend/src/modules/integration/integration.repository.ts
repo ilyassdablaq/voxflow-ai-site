@@ -5,6 +5,7 @@ type IntegrationSettingsRecord = {
   userId: string;
   botName: string;
   themeColor: string;
+  themeMode: "light" | "dark";
   position: "bottom-right" | "bottom-left";
   language: string;
   launcherText: string;
@@ -30,6 +31,7 @@ export class IntegrationRepository {
         user_id TEXT PRIMARY KEY,
         bot_name TEXT NOT NULL,
         theme_color TEXT NOT NULL,
+        theme_mode TEXT NOT NULL DEFAULT 'light',
         position TEXT NOT NULL,
         language TEXT NOT NULL,
         launcher_text TEXT NOT NULL DEFAULT 'Chat',
@@ -49,6 +51,11 @@ export class IntegrationRepository {
       ADD COLUMN IF NOT EXISTS launcher_icon TEXT NOT NULL DEFAULT 'chat'
     `);
 
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE integration_settings
+      ADD COLUMN IF NOT EXISTS theme_mode TEXT NOT NULL DEFAULT 'light'
+    `);
+
     this.initialized = true;
   }
 
@@ -56,6 +63,7 @@ export class IntegrationRepository {
     user_id: string;
     bot_name: string;
     theme_color: string;
+    theme_mode: "light" | "dark";
     position: "bottom-right" | "bottom-left";
     language: string;
     launcher_text: string | null;
@@ -67,6 +75,7 @@ export class IntegrationRepository {
       userId: row.user_id,
       botName: row.bot_name,
       themeColor: row.theme_color,
+      themeMode: row.theme_mode ?? "light",
       position: row.position,
       language: row.language,
       launcherText: row.launcher_text ?? "Chat",
@@ -84,6 +93,7 @@ export class IntegrationRepository {
         user_id: string;
         bot_name: string;
         theme_color: string;
+        theme_mode: "light" | "dark";
         position: "bottom-right" | "bottom-left";
         language: string;
         launcher_text: string | null;
@@ -93,7 +103,7 @@ export class IntegrationRepository {
       }>
     >(
       `
-        SELECT user_id, bot_name, theme_color, position, language, launcher_text, launcher_icon, embed_key, updated_at
+        SELECT user_id, bot_name, theme_color, theme_mode, position, language, launcher_text, launcher_icon, embed_key, updated_at
         FROM integration_settings
         WHERE user_id = $1
       `,
@@ -107,12 +117,13 @@ export class IntegrationRepository {
     const embedKey = createEmbedKey();
     await prisma.$executeRawUnsafe(
       `
-        INSERT INTO integration_settings (user_id, bot_name, theme_color, position, language, launcher_text, launcher_icon, embed_key, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+        INSERT INTO integration_settings (user_id, bot_name, theme_color, theme_mode, position, language, launcher_text, launcher_icon, embed_key, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
       `,
       userId,
       "Chatbot",
       "#5A67D8",
+      "light",
       "bottom-right",
       "en",
       "Chat",
@@ -124,6 +135,7 @@ export class IntegrationRepository {
       userId,
       botName: "Chatbot",
       themeColor: "#5A67D8",
+      themeMode: "light",
       position: "bottom-right",
       language: "en",
       launcherText: "Chat",
@@ -136,6 +148,7 @@ export class IntegrationRepository {
   async updateSettings(userId: string, payload: {
     botName: string;
     themeColor: string;
+    themeMode: "light" | "dark";
     position: "bottom-right" | "bottom-left";
     language: string;
     launcherText: string;
@@ -150,16 +163,18 @@ export class IntegrationRepository {
         UPDATE integration_settings
         SET bot_name = $2,
             theme_color = $3,
-            position = $4,
-            language = $5,
-            launcher_text = $6,
-            launcher_icon = $7,
+            theme_mode = $4,
+            position = $5,
+            language = $6,
+            launcher_text = $7,
+            launcher_icon = $8,
             updated_at = NOW()
         WHERE user_id = $1
       `,
       userId,
       payload.botName,
       payload.themeColor,
+      payload.themeMode,
       payload.position,
       payload.language,
       payload.launcherText,
@@ -197,6 +212,7 @@ export class IntegrationRepository {
         user_id: string;
         bot_name: string;
         theme_color: string;
+        theme_mode: "light" | "dark";
         position: "bottom-right" | "bottom-left";
         language: string;
         launcher_text: string | null;
@@ -206,7 +222,7 @@ export class IntegrationRepository {
       }>
     >(
       `
-        SELECT user_id, bot_name, theme_color, position, language, launcher_text, launcher_icon, embed_key, updated_at
+        SELECT user_id, bot_name, theme_color, theme_mode, position, language, launcher_text, launcher_icon, embed_key, updated_at
         FROM integration_settings
         WHERE embed_key = $1
       `,

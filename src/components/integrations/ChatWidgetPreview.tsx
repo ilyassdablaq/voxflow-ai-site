@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 interface ChatWidgetPreviewProps {
   botName: string;
   themeColor: string;
+  themeMode: "light" | "dark";
   position: "bottom-right" | "bottom-left";
   language: string;
   launcherText: string;
@@ -39,22 +40,27 @@ function isLightColor(color: string) {
   return luminance > 0.64;
 }
 
-export function ChatWidgetPreview({ botName, themeColor, position, language, launcherText, launcherIcon, loadingStyle = "free" }: ChatWidgetPreviewProps) {
+export function ChatWidgetPreview({ botName, themeColor, themeMode, position, language, launcherText, launcherIcon, loadingStyle = "free" }: ChatWidgetPreviewProps) {
   const textTone = isLightColor(themeColor) ? "#0f172a" : "#ffffff";
   const accentTone = isLightColor(themeColor) ? "rgba(15, 23, 42, 0.18)" : "rgba(255, 255, 255, 0.18)";
   const launcherLabel = launcherText.trim();
+  const isDarkMode = themeMode === "dark";
 
   const typingStyle = loadingStyle === "enterprise"
     ? { background: "#111827" }
     : loadingStyle === "pro"
       ? { background: "#ca8a04" }
-      : { background: "#ffffff", border: "1px solid #e2e8f0" };
+      : isDarkMode
+        ? { background: "#1f2937", border: "1px solid #374151" }
+        : { background: "#ffffff", border: "1px solid #e2e8f0" };
 
   const typingDotClass = loadingStyle === "enterprise"
     ? "bg-white/80"
     : loadingStyle === "pro"
       ? "bg-amber-100"
-      : "bg-slate-400";
+      : isDarkMode
+        ? "bg-slate-300"
+        : "bg-slate-400";
 
   const LauncherIcon = launcherIcon === "none"
     ? null
@@ -83,7 +89,10 @@ export function ChatWidgetPreview({ botName, themeColor, position, language, lau
           <div className="absolute bottom-10 left-1/4 h-28 w-28 rounded-full bg-indigo-300/20 blur-2xl" />
         </div>
 
-        <div className="relative mx-auto flex h-full max-w-[460px] flex-col overflow-hidden rounded-[30px] border border-slate-200/10 bg-white/95 shadow-[0_24px_60px_rgba(15,23,42,0.22)] backdrop-blur">
+        <div className={cn(
+          "relative mx-auto flex h-full max-w-[460px] flex-col overflow-hidden rounded-[30px] border shadow-[0_24px_60px_rgba(15,23,42,0.22)] backdrop-blur",
+          isDarkMode ? "border-slate-700/80 bg-slate-900/95" : "border-slate-200/10 bg-white/95",
+        )}>
           <div
             className="flex items-center justify-between px-4 py-3 text-white"
             style={{ background: `linear-gradient(135deg, ${themeColor}, color-mix(in srgb, ${themeColor} 72%, #ffffff 28%))` }}
@@ -96,16 +105,16 @@ export function ChatWidgetPreview({ botName, themeColor, position, language, lau
             </div>
           </div>
 
-          <div className="flex-1 space-y-3 bg-gradient-to-b from-slate-50 to-white p-4">
+          <div className={cn("flex-1 space-y-3 p-4", isDarkMode ? "bg-gradient-to-b from-slate-900 to-slate-950" : "bg-gradient-to-b from-slate-50 to-white")}>
             {sampleMessages.map((message, index) => (
               <div key={`${message.role}-${index}`} className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}>
                 <div
                   className={cn(
                     "max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm",
-                    message.role === "user" ? "rounded-br-sm text-white" : "rounded-bl-sm text-slate-700",
+                    message.role === "user" ? "rounded-br-sm text-white" : isDarkMode ? "rounded-bl-sm text-slate-200" : "rounded-bl-sm text-slate-700",
                   )}
                   style={{
-                    background: message.role === "user" ? themeColor : "#e5e7eb",
+                    background: message.role === "user" ? themeColor : isDarkMode ? "#334155" : "#e5e7eb",
                     color: message.role === "user" ? textTone : undefined,
                     boxShadow: message.role === "user" ? `0 14px 30px ${accentTone}` : undefined,
                   }}
@@ -126,9 +135,9 @@ export function ChatWidgetPreview({ botName, themeColor, position, language, lau
             </div>
           </div>
 
-          <div className="border-t border-slate-200 bg-white p-3">
-            <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-              <span className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Type your message...</span>
+          <div className={cn("border-t p-3", isDarkMode ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white")}>
+            <div className={cn("flex items-center gap-2 rounded-2xl border px-3 py-2.5", isDarkMode ? "border-slate-700 bg-slate-800" : "border-slate-200 bg-slate-50")}>
+              <span className={cn("text-xs font-medium uppercase tracking-[0.18em]", isDarkMode ? "text-slate-400" : "text-slate-400")}>Type your message...</span>
               <div className="ml-auto rounded-xl px-3 py-2 text-xs font-semibold text-white" style={{ background: themeColor }}>
                 Send
               </div>
@@ -154,7 +163,7 @@ export function ChatWidgetPreview({ botName, themeColor, position, language, lau
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-slate-100 backdrop-blur">
           <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Theme</p>
-          <p className="mt-1 text-sm font-semibold">{themeColor}</p>
+          <p className="mt-1 text-sm font-semibold">{themeMode === "dark" ? "Dark" : "Light"} · {themeColor}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-slate-100 backdrop-blur">
           <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Language</p>

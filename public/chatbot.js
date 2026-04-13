@@ -18,6 +18,7 @@
 
   var apiBase = (currentScript.getAttribute("data-api-base") || scriptOrigin || window.location.origin).replace(/\/+$/, "");
   var theme = currentScript.getAttribute("data-theme") || "#6366f1";
+  var themeMode = (currentScript.getAttribute("data-theme-mode") || "light").toLowerCase();
   var position = currentScript.getAttribute("data-position") || "bottom-right";
   var language = currentScript.getAttribute("data-language") || "en";
   var botName = (currentScript.getAttribute("data-bot-name") || "Chatbot").trim() || "Chatbot";
@@ -28,6 +29,10 @@
 
   if (loadingStyle !== "free" && loadingStyle !== "pro" && loadingStyle !== "enterprise") {
     loadingStyle = "free";
+  }
+
+  if (themeMode !== "light" && themeMode !== "dark") {
+    themeMode = "light";
   }
 
   var root = document.createElement("div");
@@ -155,6 +160,17 @@
     return svg;
   }
 
+  if (themeMode === "dark") {
+    panel.style.background = "#0f172a";
+    panel.style.border = "1px solid rgba(71, 85, 105, 0.52)";
+    messages.style.background = "linear-gradient(180deg, #0f172a 0%, #020617 100%)";
+    composer.style.background = "rgba(15, 23, 42, 0.95)";
+    composer.style.borderTop = "1px solid rgba(71, 85, 105, 0.55)";
+    input.style.background = "#1e293b";
+    input.style.color = "#e2e8f0";
+    input.style.border = "1px solid rgba(100, 116, 139, 0.72)";
+  }
+
   launcher.innerHTML = "";
   var launcherIconNode = createLauncherIcon(launcherIcon);
   if (launcherIconNode) {
@@ -211,6 +227,11 @@
     var bubble = document.createElement("div");
     bubble.className = "bubble " + role.toLowerCase();
     bubble.innerText = text;
+
+    if (themeMode === "dark" && role !== "USER") {
+      bubble.style.background = "#334155";
+      bubble.style.color = "#e2e8f0";
+    }
 
     row.appendChild(bubble);
     messages.appendChild(row);
