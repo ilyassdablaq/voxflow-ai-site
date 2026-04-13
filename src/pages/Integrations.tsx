@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Component, ErrorInfo, ReactNode, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, KeyRound, Loader2, Save } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
@@ -23,12 +23,41 @@ const THEME_PRESETS = [
 const HEX_COLOR_REGEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 function toSafeHexColor(value?: string | null, fallback = "#5A67D8") {
-  if (!value) {
+  if (typeof value !== "string") {
     return fallback;
   }
 
   const trimmed = value.trim();
   return HEX_COLOR_REGEX.test(trimmed) ? trimmed : fallback;
+}
+
+class IntegrationPreviewBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("Integration preview crashed:", error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader>
+            <CardTitle>Preview unavailable</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            The preview failed to render, but your integration settings and embed snippet are still available.
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return this.props.children;
+  }
 }
 
 export default function Integrations() {
@@ -244,12 +273,14 @@ export default function Integrations() {
         </Card>
 
         <div className="space-y-4">
-          <ChatWidgetPreview
-            botName={effectiveData?.botName ?? data.botName}
-            themeColor={effectiveData?.themeColor ?? data.themeColor}
-            position={effectiveData?.position ?? data.position}
-            language={effectiveData?.language ?? data.language}
-          />
+          <IntegrationPreviewBoundary>
+            <ChatWidgetPreview
+              botName={effectiveData?.botName ?? data.botName}
+              themeColor={effectiveData?.themeColor ?? data.themeColor}
+              position={effectiveData?.position ?? data.position}
+              language={effectiveData?.language ?? data.language}
+            />
+          </IntegrationPreviewBoundary>
 
           <Card className="border-border/70 shadow-sm">
             <CardHeader>

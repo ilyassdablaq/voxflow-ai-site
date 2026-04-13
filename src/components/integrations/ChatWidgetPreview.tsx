@@ -16,6 +16,10 @@ const sampleMessages = [
 ];
 
 function isLightColor(color: string) {
+  if (typeof color !== "string") {
+    return false;
+  }
+
   const normalized = color.replace("#", "");
   const expanded = normalized.length === 3 ? normalized.split("").map((char) => char + char).join("") : normalized;
   const numeric = Number.parseInt(expanded.slice(0, 6), 16);
