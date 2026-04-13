@@ -8,7 +8,7 @@ type IntegrationSettingsRecord = {
   position: "bottom-right" | "bottom-left";
   language: string;
   launcherText: string;
-  launcherIcon: "chat" | "message" | "sparkles";
+  launcherIcon: "chat" | "message" | "sparkles" | "none";
   embedKey: string;
   updatedAt: Date;
 };
@@ -59,7 +59,7 @@ export class IntegrationRepository {
     position: "bottom-right" | "bottom-left";
     language: string;
     launcher_text: string | null;
-    launcher_icon: "chat" | "message" | "sparkles" | null;
+    launcher_icon: "chat" | "message" | "sparkles" | "none" | null;
     embed_key: string;
     updated_at: Date;
   }): IntegrationSettingsRecord {
@@ -87,7 +87,7 @@ export class IntegrationRepository {
         position: "bottom-right" | "bottom-left";
         language: string;
         launcher_text: string | null;
-        launcher_icon: "chat" | "message" | "sparkles" | null;
+        launcher_icon: "chat" | "message" | "sparkles" | "none" | null;
         embed_key: string;
         updated_at: Date;
       }>
@@ -139,7 +139,7 @@ export class IntegrationRepository {
     position: "bottom-right" | "bottom-left";
     language: string;
     launcherText: string;
-    launcherIcon: "chat" | "message" | "sparkles";
+    launcherIcon: "chat" | "message" | "sparkles" | "none";
   }) {
     await this.ensureTable();
 
@@ -200,7 +200,7 @@ export class IntegrationRepository {
         position: "bottom-right" | "bottom-left";
         language: string;
         launcher_text: string | null;
-        launcher_icon: "chat" | "message" | "sparkles" | null;
+        launcher_icon: "chat" | "message" | "sparkles" | "none" | null;
         embed_key: string;
         updated_at: Date;
       }>

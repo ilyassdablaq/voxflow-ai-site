@@ -6,7 +6,7 @@ export const integrationSettingsSchema = z.object({
   position: z.enum(["bottom-right", "bottom-left"]),
   language: z.string().min(2).max(8),
   launcherText: z.string().max(20).default("Chat"),
-  launcherIcon: z.enum(["chat", "message", "sparkles"]).default("chat"),
+  launcherIcon: z.enum(["chat", "message", "sparkles", "none"]).default("chat"),
 });
 
 export const embedChatSchema = z.object({

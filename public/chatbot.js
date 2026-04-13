@@ -23,7 +23,12 @@
   var botName = (currentScript.getAttribute("data-bot-name") || "Chatbot").trim() || "Chatbot";
   var launcherText = (currentScript.getAttribute("data-launcher-text") || "Chat").trim();
   var launcherIcon = currentScript.getAttribute("data-launcher-icon") || "chat";
+  var loadingStyle = (currentScript.getAttribute("data-loading-style") || "free").toLowerCase();
   var side = position === "bottom-left" ? "left" : "right";
+
+  if (loadingStyle !== "free" && loadingStyle !== "pro" && loadingStyle !== "enterprise") {
+    loadingStyle = "free";
+  }
 
   var root = document.createElement("div");
   root.setAttribute("data-voxflow-chatbot-root", "true");
@@ -37,10 +42,24 @@
   var shadow = root.attachShadow ? root.attachShadow({ mode: "open" }) : root;
   var styles = document.createElement("style");
   styles.textContent = "\n    :host, * { box-sizing: border-box; }\n    .shell { display: flex; flex-direction: column; align-items: end; gap: 12px; }\n    .panel {\n      display: none;\n      width: min(340px, calc(100vw - 32px));\n      height: min(490px, calc(100vh - 96px));\n      background: #f8fafc;\n      border: 1px solid rgba(148, 163, 184, 0.35);\n      border-radius: 22px;\n      box-shadow: 0 30px 60px rgba(15, 23, 42, 0.22);\n      overflow: hidden;\n      backdrop-filter: blur(18px);\n    }\n    .panel.open { display: flex; flex-direction: column; }\n    .header {\n      min-height: 56px;\n      padding: 0 16px;\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      background: linear-gradient(135deg, var(--theme), color-mix(in srgb, var(--theme) 72%, #ffffff 28%));\n      color: #fff;\n    }\n    .header-title { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }\n    .header-copy { display: flex; flex-direction: column; gap: 1px; }\n    .status-pill {\n      font-size: 11px;\n      font-weight: 600;\n      padding: 6px 10px;\n      border-radius: 999px;\n      background: rgba(255, 255, 255, 0.18);\n      border: 1px solid rgba(255, 255, 255, 0.18);\n      white-space: nowrap;\n    }\n    .messages {\n      flex: 1;\n      overflow-y: auto;\n      padding: 14px;\n      display: flex;\n      flex-direction: column;\n      gap: 12px;\n      background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);\n    }\n    .row { display: flex; }\n    .row.user { justify-content: flex-end; }\n    .row.assistant { justify-content: flex-start; }\n    .bubble {\n      max-width: 82%;\n      padding: 11px 13px;\n      border-radius: 14px;\n      font-size: 13px;\n      line-height: 1.45;\n      white-space: pre-wrap;\n      word-break: break-word;\n      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);\n    }\n    .bubble.user {\n      color: #fff;\n      background: var(--theme);\n      border-bottom-right-radius: 6px;\n    }\n    .bubble.assistant {\n      color: #1e293b;\n      background: #e5e7eb;\n      border-bottom-left-radius: 6px;\n    }\n    .bubble.system {\n      color: #475569;\n      background: #eef2ff;\n      border: 1px solid rgba(99, 102, 241, 0.16);\n    }\n    .typing { display: inline-flex; align-items: center; gap: 4px; min-width: 44px; }\n    .dot { width: 6px; height: 6px; border-radius: 999px; background: #94a3b8; animation: bounce 1s infinite ease-in-out; }\n    .dot:nth-child(2) { animation-delay: 120ms; }\n    .dot:nth-child(3) { animation-delay: 240ms; }\n    @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.45; } 40% { transform: translateY(-4px); opacity: 1; } }\n    .composer {\n      border-top: 1px solid rgba(148, 163, 184, 0.22);\n      background: rgba(255, 255, 255, 0.92);\n      padding: 10px;\n      display: flex;\n      gap: 8px;\n      align-items: center;\n    }\n    .input {\n      flex: 1;\n      min-height: 42px;\n      border: 1px solid rgba(148, 163, 184, 0.45);\n      border-radius: 12px;\n      padding: 0 12px;\n      background: #fff;\n      color: #0f172a;\n      outline: none;\n      font-size: 14px;\n      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);\n    }\n    .input:focus { border-color: var(--theme); box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme) 20%, transparent); }\n    .send {\n      min-width: 64px;\n      min-height: 42px;\n      padding: 0 14px;\n      border: 0;\n      border-radius: 12px;\n      cursor: pointer;\n      color: #fff;\n      background: var(--theme);\n      font-weight: 700;\n      font-size: 14px;\n      box-shadow: 0 10px 24px color-mix(in srgb, var(--theme) 25%, transparent);\n    }\n    .send:disabled { opacity: 0.6; cursor: not-allowed; }\n    .launcher {\n      width: 56px;\n      height: 56px;\n      border-radius: 999px;\n      border: 0;\n      cursor: pointer;\n      color: #fff;\n      background: linear-gradient(135deg, var(--theme), color-mix(in srgb, var(--theme) 72%, #ffffff 28%));\n      box-shadow: 0 18px 30px rgba(15, 23, 42, 0.2);\n      display: inline-flex;\n      align-items: center;\n      justify-content: center;\n      font-weight: 700;\n      letter-spacing: 0.01em;\n    }\n    .launcher svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; }\n    .empty { color: #64748b; font-size: 13px; line-height: 1.5; padding: 8px 4px; }\n  ";
+  styles.textContent += "\n    .typing-bubble { background: var(--loading-bg, #ffffff) !important; border: 1px solid var(--loading-border, #e2e8f0) !important; }\n    .typing-bubble .dot { background: var(--loading-dot, #94a3b8) !important; }\n  ";
 
   var shell = document.createElement("div");
   shell.className = "shell";
   shell.style.setProperty("--theme", theme);
+  if (loadingStyle === "enterprise") {
+    shell.style.setProperty("--loading-bg", "#111827");
+    shell.style.setProperty("--loading-border", "transparent");
+    shell.style.setProperty("--loading-dot", "rgba(255,255,255,0.88)");
+  } else if (loadingStyle === "pro") {
+    shell.style.setProperty("--loading-bg", "#ca8a04");
+    shell.style.setProperty("--loading-border", "transparent");
+    shell.style.setProperty("--loading-dot", "#fef3c7");
+  } else {
+    shell.style.setProperty("--loading-bg", "#ffffff");
+    shell.style.setProperty("--loading-border", "#e2e8f0");
+    shell.style.setProperty("--loading-dot", "#94a3b8");
+  }
   shell.style.alignItems = side === "left" ? "flex-start" : "flex-end";
 
   var panel = document.createElement("div");
@@ -92,9 +111,13 @@
   var launcher = document.createElement("button");
   launcher.className = "launcher";
   launcher.type = "button";
-  launcher.setAttribute("aria-label", "Open chat");
+  launcher.setAttribute("aria-label", launcherText || "Open chat");
 
   function createLauncherIcon(iconName) {
+    if (iconName === "none") {
+      return null;
+    }
+
     var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("aria-hidden", "true");
@@ -133,7 +156,10 @@
   }
 
   launcher.innerHTML = "";
-  launcher.appendChild(createLauncherIcon(launcherIcon));
+  var launcherIconNode = createLauncherIcon(launcherIcon);
+  if (launcherIconNode) {
+    launcher.appendChild(launcherIconNode);
+  }
 
   if (launcherText) {
     var launcherLabel = document.createElement("span");
@@ -148,9 +174,9 @@
     launcher.style.padding = "0 16px";
     launcher.style.gap = "8px";
   } else {
-    launcher.style.width = "56px";
+    launcher.style.width = launcherIconNode ? "56px" : "auto";
     launcher.style.minWidth = "56px";
-    launcher.style.padding = "0";
+    launcher.style.padding = launcherIconNode ? "0" : "0 16px";
     launcher.style.gap = "0";
   }
 
@@ -198,6 +224,7 @@
 
     var bubble = document.createElement("div");
     bubble.className = "bubble assistant";
+    bubble.className += " typing-bubble";
 
     var typing = document.createElement("span");
     typing.className = "typing";

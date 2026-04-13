@@ -7,7 +7,8 @@ interface ChatWidgetPreviewProps {
   position: "bottom-right" | "bottom-left";
   language: string;
   launcherText: string;
-  launcherIcon: "chat" | "message" | "sparkles";
+  launcherIcon: "chat" | "message" | "sparkles" | "none";
+  loadingStyle?: "free" | "pro" | "enterprise";
 }
 
 const sampleMessages = [
@@ -38,12 +39,26 @@ function isLightColor(color: string) {
   return luminance > 0.64;
 }
 
-export function ChatWidgetPreview({ botName, themeColor, position, language, launcherText, launcherIcon }: ChatWidgetPreviewProps) {
+export function ChatWidgetPreview({ botName, themeColor, position, language, launcherText, launcherIcon, loadingStyle = "free" }: ChatWidgetPreviewProps) {
   const textTone = isLightColor(themeColor) ? "#0f172a" : "#ffffff";
   const accentTone = isLightColor(themeColor) ? "rgba(15, 23, 42, 0.18)" : "rgba(255, 255, 255, 0.18)";
   const launcherLabel = launcherText.trim();
 
-  const LauncherIcon = launcherIcon === "sparkles"
+  const typingStyle = loadingStyle === "enterprise"
+    ? { background: "#111827" }
+    : loadingStyle === "pro"
+      ? { background: "#ca8a04" }
+      : { background: "#ffffff", border: "1px solid #e2e8f0" };
+
+  const typingDotClass = loadingStyle === "enterprise"
+    ? "bg-white/80"
+    : loadingStyle === "pro"
+      ? "bg-amber-100"
+      : "bg-slate-400";
+
+  const LauncherIcon = launcherIcon === "none"
+    ? null
+    : launcherIcon === "sparkles"
     ? Sparkles
     : launcherIcon === "message"
       ? MessageSquare
@@ -101,11 +116,11 @@ export function ChatWidgetPreview({ botName, themeColor, position, language, lau
             ))}
 
             <div className="flex justify-start">
-              <div className="rounded-2xl rounded-bl-sm border border-slate-200 bg-slate-100 px-4 py-3 shadow-sm">
+              <div className="rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm" style={typingStyle}>
                 <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400 [animation-delay:120ms]" />
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400 [animation-delay:240ms]" />
+                  <span className={cn("h-2 w-2 animate-pulse rounded-full", typingDotClass)} />
+                  <span className={cn("h-2 w-2 animate-pulse rounded-full [animation-delay:120ms]", typingDotClass)} />
+                  <span className={cn("h-2 w-2 animate-pulse rounded-full [animation-delay:240ms]", typingDotClass)} />
                 </div>
               </div>
             </div>
@@ -130,7 +145,7 @@ export function ChatWidgetPreview({ botName, themeColor, position, language, lau
             )}
             style={{ background: themeColor, color: textTone }}
           >
-            <LauncherIcon className="h-5 w-5" />
+            {LauncherIcon ? <LauncherIcon className="h-5 w-5" /> : null}
             {launcherLabel ? <span className="max-w-[120px] truncate">{launcherLabel}</span> : null}
           </button>
         </div>

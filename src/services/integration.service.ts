@@ -7,7 +7,7 @@ export interface IntegrationSettings {
   position: "bottom-right" | "bottom-left";
   language: string;
   launcherText: string;
-  launcherIcon: "chat" | "message" | "sparkles";
+  launcherIcon: "chat" | "message" | "sparkles" | "none";
   embedKey: string;
   updatedAt: string;
 }
@@ -23,7 +23,7 @@ export const integrationService = {
     position: "bottom-right" | "bottom-left";
     language: string;
     launcherText: string;
-    launcherIcon: "chat" | "message" | "sparkles";
+    launcherIcon: "chat" | "message" | "sparkles" | "none";
   }) {
     return apiClient.put<IntegrationSettings>("/api/integrations/settings", payload);
   },

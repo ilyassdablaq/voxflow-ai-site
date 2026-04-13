@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { integrationService } from "@/services/integration.service";
 import { API_BASE } from "@/lib/api-config";
 import { ChatWidgetPreview } from "@/components/integrations/ChatWidgetPreview";
@@ -20,10 +21,11 @@ const THEME_PRESETS = [
   { label: "Slate", value: "#334155" },
 ];
 
-const LAUNCHER_ICON_OPTIONS: Array<{ label: string; value: "chat" | "message" | "sparkles" }> = [
+const LAUNCHER_ICON_OPTIONS: Array<{ label: string; value: "chat" | "message" | "sparkles" | "none" }> = [
   { label: "Chat bubble", value: "chat" },
   { label: "Message", value: "message" },
   { label: "Sparkles", value: "sparkles" },
+  { label: "No icon", value: "none" },
 ];
 
 const HEX_COLOR_REGEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
@@ -69,6 +71,7 @@ class IntegrationPreviewBoundary extends Component<{ children: ReactNode }, { ha
 export default function Integrations() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { subscription } = useAuth();
 
   const { data, isLoading } = useQuery({
     queryKey: ["integration-settings"],
@@ -80,7 +83,19 @@ export default function Integrations() {
   const [position, setPosition] = useState<"bottom-right" | "bottom-left">("bottom-right");
   const [language, setLanguage] = useState("en");
   const [launcherText, setLauncherText] = useState("");
-  const [launcherIcon, setLauncherIcon] = useState<"chat" | "message" | "sparkles">("chat");
+  const [launcherIcon, setLauncherIcon] = useState<"chat" | "message" | "sparkles" | "none">("chat");
+
+  const loadingStyle = useMemo(() => {
+    if (subscription?.effectivePlan === "ENTERPRISE") {
+      return "enterprise" as const;
+    }
+
+    if (subscription?.effectivePlan === "PRO") {
+      return "pro" as const;
+    }
+
+    return "free" as const;
+  }, [subscription?.effectivePlan]);
 
   useEffect(() => {
     if (!data) {
@@ -91,8 +106,8 @@ export default function Integrations() {
     setThemeColor(toSafeHexColor(data.themeColor));
     setPosition(data.position);
     setLanguage(data.language);
-    setLauncherText((data.launcherText ?? "").trim());
-    setLauncherIcon(data.launcherIcon || "chat");
+    setLauncherText((previous) => (typeof data.launcherText === "string" ? data.launcherText.trim() : previous));
+    setLauncherIcon((previous) => data.launcherIcon || previous || "chat");
   }, [data]);
 
   const effectiveData = useMemo(() => {
@@ -138,7 +153,7 @@ export default function Integrations() {
       setPosition(updated.position);
       setLanguage(updated.language);
       setLauncherText(updated.launcherText ?? launcherText.trim());
-      setLauncherIcon(updated.launcherIcon ?? launcherIcon);
+      setLauncherIcon(updated.launcherIcon ?? launcherIcon ?? "chat");
       toast({ title: "Saved", description: "Integration settings updated." });
     },
     onError: (error) => {
@@ -172,8 +187,8 @@ export default function Integrations() {
 
     const scriptHost = typeof window !== "undefined" ? window.location.origin : "https://yourapp.com";
 
-    return `<script src="${scriptHost}/chatbot.js" data-embed-key="${effectiveData.embedKey}" data-api-base="${API_BASE}" data-theme="${effectiveData.themeColor}" data-position="${effectiveData.position}" data-language="${effectiveData.language}" data-bot-name="${effectiveData.botName}" data-launcher-text="${effectiveData.launcherText}" data-launcher-icon="${effectiveData.launcherIcon}"><\/script>`;
-  }, [effectiveData]);
+    return `<script src="${scriptHost}/chatbot.js" data-embed-key="${effectiveData.embedKey}" data-api-base="${API_BASE}" data-theme="${effectiveData.themeColor}" data-position="${effectiveData.position}" data-language="${effectiveData.language}" data-bot-name="${effectiveData.botName}" data-launcher-text="${effectiveData.launcherText}" data-launcher-icon="${effectiveData.launcherIcon}" data-loading-style="${loadingStyle}"><\/script>`;
+  }, [effectiveData, loadingStyle]);
 
   const copySnippet = async () => {
     await navigator.clipboard.writeText(scriptSnippet);
@@ -287,7 +302,7 @@ export default function Integrations() {
                 <select
                   className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
                   value={launcherIcon}
-                  onChange={(event) => setLauncherIcon(event.target.value as "chat" | "message" | "sparkles")}
+                  onChange={(event) => setLauncherIcon(event.target.value as "chat" | "message" | "sparkles" | "none")}
                 >
                   {LAUNCHER_ICON_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -330,6 +345,7 @@ export default function Integrations() {
               language={effectiveData?.language ?? data.language}
               launcherText={effectiveData?.launcherText ?? data.launcherText ?? "Chat"}
               launcherIcon={effectiveData?.launcherIcon ?? data.launcherIcon ?? "chat"}
+              loadingStyle={loadingStyle}
             />
           </IntegrationPreviewBoundary>
 
