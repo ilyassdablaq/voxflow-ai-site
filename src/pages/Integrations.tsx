@@ -105,7 +105,7 @@ export default function Integrations() {
     return THEME_PRESETS.find((preset) => preset.value.toLowerCase() === normalized)?.value ?? "custom";
   }, [data?.themeColor, themeColor]);
 
-  const canSave = (botName || data.botName || "").trim().length > 0;
+  const canSave = (botName || data?.botName || "").trim().length > 0;
 
   const saveMutation = useMutation({
     mutationFn: () =>
