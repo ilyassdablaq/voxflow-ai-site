@@ -20,6 +20,17 @@ const THEME_PRESETS = [
   { label: "Slate", value: "#334155" },
 ];
 
+const HEX_COLOR_REGEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+function toSafeHexColor(value?: string | null, fallback = "#5A67D8") {
+  if (!value) {
+    return fallback;
+  }
+
+  const trimmed = value.trim();
+  return HEX_COLOR_REGEX.test(trimmed) ? trimmed : fallback;
+}
+
 export default function Integrations() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -40,14 +51,14 @@ export default function Integrations() {
     }
 
     setBotName(data.botName);
-    setThemeColor(data.themeColor);
+    setThemeColor(toSafeHexColor(data.themeColor));
     setPosition(data.position);
     setLanguage(data.language);
   }, [data]);
 
   const effectiveData = useMemo(() => {
     const nextBotName = (botName || data?.botName || "Chatbot").trim();
-    const nextTheme = (themeColor || data?.themeColor || "#5A67D8").trim();
+    const nextTheme = toSafeHexColor(themeColor || data?.themeColor || "#5A67D8");
 
     return data
       ? {
@@ -71,7 +82,7 @@ export default function Integrations() {
     mutationFn: () =>
       integrationService.updateSettings({
         botName: (botName || data?.botName || "Chatbot").trim(),
-        themeColor: themeColor || data?.themeColor || "#5A67D8",
+        themeColor: toSafeHexColor(themeColor || data?.themeColor || "#5A67D8"),
         position,
         language,
       }),
@@ -171,13 +182,13 @@ export default function Integrations() {
                   <div className="flex items-center gap-2">
                     <Input
                       type="color"
-                      value={themeColor || data.themeColor}
+                      value={toSafeHexColor(themeColor || data.themeColor)}
                       onChange={(event) => setThemeColor(event.target.value)}
                       className="h-11 w-14 cursor-pointer p-1"
                       aria-label="Select widget color"
                     />
                     <span className="min-w-[78px] text-xs font-medium text-muted-foreground">
-                      {(themeColor || data.themeColor).toUpperCase()}
+                      {toSafeHexColor(themeColor || data.themeColor).toUpperCase()}
                     </span>
                   </div>
                 </div>

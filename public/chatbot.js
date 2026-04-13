@@ -9,7 +9,14 @@
     return;
   }
 
-  var apiBase = (currentScript.getAttribute("data-api-base") || new URL(currentScript.src).origin || window.location.origin).replace(/\/+$/, "");
+  var scriptOrigin = window.location.origin;
+  try {
+    scriptOrigin = new URL(currentScript.src, window.location.href).origin;
+  } catch (_urlError) {
+    scriptOrigin = window.location.origin;
+  }
+
+  var apiBase = (currentScript.getAttribute("data-api-base") || scriptOrigin || window.location.origin).replace(/\/+$/, "");
   var theme = currentScript.getAttribute("data-theme") || "#6366f1";
   var position = currentScript.getAttribute("data-position") || "bottom-right";
   var language = currentScript.getAttribute("data-language") || "en";
