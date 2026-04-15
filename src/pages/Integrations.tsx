@@ -175,7 +175,18 @@ export default function Integrations() {
         maxSessionQuestions: Math.min(20, Math.max(1, maxSessionQuestions)),
       }),
     onSuccess: (updated) => {
-      void queryClient.setQueryData(["integration-settings"], updated);
+      const nextInitialBotMessage = initialBotMessage.trim() || DEFAULT_INITIAL_BOT_MESSAGE;
+      const nextMaxSessionQuestions = Math.min(20, Math.max(1, maxSessionQuestions));
+
+      const normalized = {
+        ...updated,
+        initialBotMessage: updated.initialBotMessage?.trim() || nextInitialBotMessage,
+        maxSessionQuestions: Number.isFinite(updated.maxSessionQuestions)
+          ? Math.min(20, Math.max(1, updated.maxSessionQuestions))
+          : nextMaxSessionQuestions,
+      };
+
+      void queryClient.setQueryData(["integration-settings"], normalized);
       setBotName(updated.botName ?? botName.trim());
       setThemeColor(updated.themeColor);
       setThemeMode(updated.themeMode ?? themeMode);
@@ -183,8 +194,8 @@ export default function Integrations() {
       setLanguage(updated.language);
       setLauncherText(updated.launcherText ?? launcherText.trim());
       setLauncherIcon(updated.launcherIcon ?? launcherIcon ?? "chat");
-      setInitialBotMessage(updated.initialBotMessage ?? (initialBotMessage.trim() || DEFAULT_INITIAL_BOT_MESSAGE));
-      setMaxSessionQuestions(Math.min(20, Math.max(1, updated.maxSessionQuestions ?? maxSessionQuestions)));
+      setInitialBotMessage(normalized.initialBotMessage);
+      setMaxSessionQuestions(normalized.maxSessionQuestions);
       toast({ title: "Saved", description: "Integration settings updated." });
     },
     onError: (error) => {

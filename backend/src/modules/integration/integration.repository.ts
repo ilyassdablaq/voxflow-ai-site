@@ -184,7 +184,22 @@ export class IntegrationRepository {
 
     await this.getOrCreateByUserId(userId);
 
-    await prisma.$executeRawUnsafe(
+    const updatedRows = await prisma.$queryRawUnsafe<
+      Array<{
+        user_id: string;
+        bot_name: string;
+        theme_color: string;
+        theme_mode: "light" | "dark";
+        position: "bottom-right" | "bottom-left";
+        language: string;
+        launcher_text: string | null;
+        launcher_icon: "chat" | "message" | "sparkles" | "none" | null;
+        initial_bot_message: string | null;
+        max_session_questions: number | null;
+        embed_key: string;
+        updated_at: Date;
+      }>
+    >(
       `
         UPDATE integration_settings
         SET bot_name = $2,
@@ -198,6 +213,7 @@ export class IntegrationRepository {
             max_session_questions = $10,
             updated_at = NOW()
         WHERE user_id = $1
+        RETURNING user_id, bot_name, theme_color, theme_mode, position, language, launcher_text, launcher_icon, initial_bot_message, max_session_questions, embed_key, updated_at
       `,
       userId,
       payload.botName,
@@ -211,7 +227,11 @@ export class IntegrationRepository {
       payload.maxSessionQuestions,
     );
 
-    return this.getOrCreateByUserId(userId);
+    if (updatedRows.length === 0) {
+      return this.getOrCreateByUserId(userId);
+    }
+
+    return this.mapRecord(updatedRows[0]);
   }
 
   async regenerateEmbedKey(userId: string) {
