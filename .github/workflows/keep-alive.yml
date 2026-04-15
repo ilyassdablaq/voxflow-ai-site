@@ -4,35 +4,47 @@ on:
   schedule:
     # Führe alle 10 Minuten aus (vor der 15-min Render-Grenze)
     - cron: '*/10 * * * *'
-  workspace_dispatch:
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Backend Health Endpoint
-        run: |
-          echo "🔄 Pinging backend at: ${{ secrets.BACKEND_URL }}"
-          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.BACKEND_URL }}/health")
-          
-          if [ "$response" = "200" ]; then
-            echo "✓ Backend is alive (HTTP $response)"
-            exit 0
-          else
-            echo "✗ Backend returned HTTP $response"
-            exit 1
-          fi
+      - name: Validate BACKEND_URL secret
         env:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
-        continue-on-error: true
+        run: |
+          if [ -z "$BACKEND_URL" ]; then
+            echo "Missing required secret: BACKEND_URL"
+            exit 1
+          fi
+
+      - name: Ping Backend Health Endpoint
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+        run: |
+          BASE_URL="${BACKEND_URL%/}"
+          HEALTH_URL="$BASE_URL/health"
+          echo "Pinging backend at: $HEALTH_URL"
+
+          response=$(curl -sS -o /dev/null -w "%{http_code}" \
+            --connect-timeout 10 \
+            --max-time 20 \
+            --retry 3 \
+            --retry-all-errors \
+            "$HEALTH_URL")
+
+          if [ "$response" = "200" ]; then
+            echo "Backend is alive (HTTP $response)"
+          else
+            echo "Backend returned HTTP $response"
+            exit 1
+          fi
 
       - name: Log Success
         if: success()
-        run: echo "✓ Keep-alive check completed successfully at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+        run: echo "Keep-alive check completed successfully at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 
       - name: Log Failure
         if: failure()
-        run: echo "⚠️ Backend might be sleeping, but will recover on next request"
+        run: echo "Keep-alive check failed. Verify BACKEND_URL and endpoint availability."
