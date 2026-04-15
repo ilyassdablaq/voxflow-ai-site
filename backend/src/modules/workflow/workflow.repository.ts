@@ -42,7 +42,7 @@ export class WorkflowRepository {
         name TEXT NOT NULL,
         description TEXT NOT NULL DEFAULT '',
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
-        trigger JSONB NOT NULL,
+        "trigger" JSONB NOT NULL,
         actions JSONB NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -87,7 +87,7 @@ export class WorkflowRepository {
       updated_at: Date;
     }>>(
       `
-      SELECT id, user_id, name, description, is_active, trigger, actions, created_at, updated_at
+      SELECT id, user_id, name, description, is_active, "trigger", actions, created_at, updated_at
       FROM workflow_automations
       WHERE user_id = $1
       ORDER BY updated_at DESC
@@ -123,7 +123,7 @@ export class WorkflowRepository {
       updated_at: Date;
     }>>(
       `
-      SELECT id, user_id, name, description, is_active, trigger, actions, created_at, updated_at
+      SELECT id, user_id, name, description, is_active, "trigger", actions, created_at, updated_at
       FROM workflow_automations
       WHERE user_id = $1 AND id = $2
       LIMIT 1
@@ -163,7 +163,7 @@ export class WorkflowRepository {
 
     await prisma.$executeRawUnsafe(
       `
-      INSERT INTO workflow_automations (id, user_id, name, description, is_active, trigger, actions, created_at, updated_at)
+      INSERT INTO workflow_automations (id, user_id, name, description, is_active, "trigger", actions, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, NOW(), NOW())
       `,
       input.id,
@@ -199,7 +199,7 @@ export class WorkflowRepository {
       SET name = $3,
           description = $4,
           is_active = $5,
-          trigger = $6::jsonb,
+          "trigger" = $6::jsonb,
           actions = $7::jsonb,
           updated_at = NOW()
       WHERE id = $1 AND user_id = $2
