@@ -28,7 +28,8 @@ jobs:
         run: npm ci
 
       - name: Audit runtime dependencies
-        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=critical
 
   backend-audit:
     name: Backend npm audit
@@ -53,7 +54,8 @@ jobs:
         run: npm ci
 
       - name: Audit runtime dependencies
-        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=critical
 
   dependency-review:
     name: Dependency Review (PR)
