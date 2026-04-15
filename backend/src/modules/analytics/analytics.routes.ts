@@ -11,7 +11,7 @@ export async function analyticsRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.get(
     "/api/analytics/dashboard",
-    { preHandler: [authenticate, requiresPlan(PLAN_TYPES.PRO), validate({ query: analyticsQuerySchema })] },
+    { preHandler: [authenticate, requiresPlan(PLAN_TYPES.FREE), validate({ query: analyticsQuerySchema })] },
     async (request) => {
       const user = request.user as { sub: string };
       return service.getDashboardAnalytics(user.sub, request.query as AnalyticsQueryInput);

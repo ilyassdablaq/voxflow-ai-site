@@ -25,7 +25,7 @@ export async function workflowRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.post(
     "/api/workflows",
-    { preHandler: [authenticate, requiresPlan(PLAN_TYPES.PRO), validate({ body: createWorkflowSchema })] },
+    { preHandler: [authenticate, requiresPlan(PLAN_TYPES.FREE), validate({ body: createWorkflowSchema })] },
     async (request, reply) => {
       const user = request.user as { sub: string };
       const workflow = await service.createWorkflow(user.sub, request.body as CreateWorkflowInput);
@@ -35,7 +35,7 @@ export async function workflowRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.patch(
     "/api/workflows/:id",
-    { preHandler: [authenticate, requiresPlan(PLAN_TYPES.PRO), validate({ params: workflowIdParamSchema, body: updateWorkflowSchema })] },
+    { preHandler: [authenticate, requiresPlan(PLAN_TYPES.FREE), validate({ params: workflowIdParamSchema, body: updateWorkflowSchema })] },
     async (request) => {
       const user = request.user as { sub: string };
       const { id } = request.params as { id: string };
@@ -45,7 +45,7 @@ export async function workflowRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.delete(
     "/api/workflows/:id",
-    { preHandler: [authenticate, requiresPlan(PLAN_TYPES.PRO), validate({ params: workflowIdParamSchema })] },
+    { preHandler: [authenticate, requiresPlan(PLAN_TYPES.FREE), validate({ params: workflowIdParamSchema })] },
     async (request, reply) => {
       const user = request.user as { sub: string };
       const { id } = request.params as { id: string };
@@ -56,7 +56,7 @@ export async function workflowRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.post(
     "/api/workflows/:id/run",
-    { preHandler: [authenticate, requiresPlan(PLAN_TYPES.PRO), validate({ params: workflowIdParamSchema, body: runWorkflowSchema })] },
+    { preHandler: [authenticate, requiresPlan(PLAN_TYPES.FREE), validate({ params: workflowIdParamSchema, body: runWorkflowSchema })] },
     async (request) => {
       const user = request.user as { sub: string };
       const { id } = request.params as { id: string };
