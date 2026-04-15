@@ -4,35 +4,70 @@ import { PLAN_TYPES, PlanType, canAccessFeature } from "../constants/plan.consta
 
 const prismaClient = prisma as any;
 
+function isMissingAdminPlanOverrideTable(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2021"
+  );
+}
+
 export class PlanCheckService {
   private async cleanupExpiredOverrides(userId: string): Promise<void> {
     const now = new Date();
-    await prismaClient.adminPlanOverride.updateMany({
-      where: {
-        userId,
-        revokedAt: null,
-        expiresAt: { lte: now },
-      },
-      data: { revokedAt: now },
-    });
+    try {
+      await prismaClient.adminPlanOverride.updateMany({
+        where: {
+          userId,
+          revokedAt: null,
+          expiresAt: { lte: now },
+        },
+        data: { revokedAt: now },
+      });
+    } catch (error) {
+      if (isMissingAdminPlanOverrideTable(error)) {
+        return;
+      }
+
+      throw error;
+    }
   }
 
   async getActiveOverride(userId: string): Promise<{ plan: PlanType; expiresAt: Date | null } | null> {
-    await this.cleanupExpiredOverrides(userId);
+    try {
+      await this.cleanupExpiredOverrides(userId);
+    } catch (error) {
+      if (!isMissingAdminPlanOverrideTable(error)) {
+        throw error;
+      }
+
+      return null;
+    }
 
     const now = new Date();
-    const activeOverride = await prismaClient.adminPlanOverride.findFirst({
-      where: {
-        userId,
-        revokedAt: null,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-      },
-      orderBy: { createdAt: "desc" },
-      select: {
-        plan: true,
-        expiresAt: true,
-      },
-    });
+    let activeOverride;
+
+    try {
+      activeOverride = await prismaClient.adminPlanOverride.findFirst({
+        where: {
+          userId,
+          revokedAt: null,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+          plan: true,
+          expiresAt: true,
+        },
+      });
+    } catch (error) {
+      if (isMissingAdminPlanOverrideTable(error)) {
+        return null;
+      }
+
+      throw error;
+    }
 
     if (!activeOverride) {
       return null;
