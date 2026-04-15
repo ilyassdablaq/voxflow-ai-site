@@ -24,7 +24,10 @@
   var botName = (currentScript.getAttribute("data-bot-name") || "Chatbot").trim() || "Chatbot";
   var launcherText = (currentScript.getAttribute("data-launcher-text") || "Chat").trim();
   var launcherIcon = currentScript.getAttribute("data-launcher-icon") || "chat";
+  var initialMessage = (currentScript.getAttribute("data-initial-message") || "Hi. Send me a message and I will reply here.").trim();
+  var maxSessionQuestionsValue = Number.parseInt(currentScript.getAttribute("data-max-session-questions") || "3", 10);
   var loadingStyle = (currentScript.getAttribute("data-loading-style") || "free").toLowerCase();
+  var maxSessionQuestions = Number.isFinite(maxSessionQuestionsValue) ? Math.max(1, maxSessionQuestionsValue) : 3;
   var side = position === "bottom-left" ? "left" : "right";
 
   if (loadingStyle !== "free" && loadingStyle !== "pro" && loadingStyle !== "enterprise") {
@@ -82,12 +85,14 @@
 
   headerCopy.appendChild(headerTitle);
 
-  var status = document.createElement("div");
-  status.className = "status-pill";
-  status.innerText = "Online";
+  var closeButton = document.createElement("button");
+  closeButton.className = "status-pill";
+  closeButton.type = "button";
+  closeButton.setAttribute("aria-label", "Close chat");
+  closeButton.innerText = "X";
 
   header.appendChild(headerCopy);
-  header.appendChild(status);
+  header.appendChild(closeButton);
 
   var messages = document.createElement("div");
   messages.className = "messages";
@@ -203,8 +208,17 @@
   document.body.appendChild(root);
 
   var conversationId = null;
+  var userQuestionCount = 0;
+  var sessionCompleted = false;
   var isOpen = false;
   var isPending = false;
+
+  function updateComposerAvailability() {
+    var limitReached = sessionCompleted || userQuestionCount >= maxSessionQuestions;
+    input.disabled = limitReached || isPending;
+    send.disabled = limitReached || isPending;
+    input.placeholder = limitReached ? "Session ended (" + maxSessionQuestions + "/" + maxSessionQuestions + ")." : "Type your message...";
+  }
 
   function setOpen(nextOpen) {
     isOpen = nextOpen;
@@ -300,13 +314,15 @@
   }
 
   async function sendMessage(text) {
-    if (isPending) {
+    if (isPending || sessionCompleted || userQuestionCount >= maxSessionQuestions) {
+      if (!isPending) {
+        createBubble("SYSTEM", "This chat session is complete. Start a new website session to continue.");
+      }
       return;
     }
 
     isPending = true;
-    send.disabled = true;
-    input.disabled = true;
+    updateComposerAvailability();
 
     createBubble("USER", text);
     var typingRow = createTypingBubble();
@@ -352,6 +368,10 @@
         }
 
         conversationId = payload && typeof payload.conversationId === "string" ? payload.conversationId : conversationId;
+        userQuestionCount = payload && typeof payload.remainingQuestions === "number"
+          ? Math.max(0, maxSessionQuestions - payload.remainingQuestions)
+          : userQuestionCount + 1;
+        sessionCompleted = Boolean(payload && payload.sessionCompleted);
 
         var assistantText = getAssistantText(payload);
         if (!assistantText) {
@@ -360,6 +380,10 @@
 
         typingRow.remove();
         createBubble("ASSISTANT", assistantText);
+        if (sessionCompleted || userQuestionCount >= maxSessionQuestions) {
+          sessionCompleted = true;
+          createBubble("SYSTEM", "This session is saved to Conversations after " + maxSessionQuestions + " questions.");
+        }
       } finally {
         window.clearTimeout(timeout);
       }
@@ -378,14 +402,19 @@
       createBubble("ASSISTANT", message);
     } finally {
       isPending = false;
-      send.disabled = false;
-      input.disabled = false;
-      input.focus();
+      updateComposerAvailability();
+      if (!sessionCompleted) {
+        input.focus();
+      }
     }
   }
 
   launcher.addEventListener("click", function () {
     setOpen(!isOpen);
+  });
+
+  closeButton.addEventListener("click", function () {
+    setOpen(false);
   });
 
   composer.addEventListener("submit", function (event) {
@@ -399,6 +428,7 @@
     sendMessage(value);
   });
 
-  createBubble("ASSISTANT", "Hi. Send me a message and I will reply here.");
+  createBubble("ASSISTANT", initialMessage || "Hi. Send me a message and I will reply here.");
+  updateComposerAvailability();
   setOpen(false);
 })();

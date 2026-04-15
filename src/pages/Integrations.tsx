@@ -29,6 +29,8 @@ const LAUNCHER_ICON_OPTIONS: Array<{ label: string; value: "chat" | "message" | 
 ];
 
 const HEX_COLOR_REGEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+const DEFAULT_INITIAL_BOT_MESSAGE = "Hi. Send me a message and I will reply here.";
+const DEFAULT_MAX_SESSION_QUESTIONS = 3;
 
 function toSafeHexColor(value?: string | null, fallback = "#5A67D8") {
   if (typeof value !== "string") {
@@ -37,6 +39,14 @@ function toSafeHexColor(value?: string | null, fallback = "#5A67D8") {
 
   const trimmed = value.trim();
   return HEX_COLOR_REGEX.test(trimmed) ? trimmed : fallback;
+}
+
+function escapeHtmlAttribute(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 class IntegrationPreviewBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -85,6 +95,8 @@ export default function Integrations() {
   const [language, setLanguage] = useState("en");
   const [launcherText, setLauncherText] = useState("");
   const [launcherIcon, setLauncherIcon] = useState<"chat" | "message" | "sparkles" | "none">("chat");
+  const [initialBotMessage, setInitialBotMessage] = useState(DEFAULT_INITIAL_BOT_MESSAGE);
+  const [maxSessionQuestions, setMaxSessionQuestions] = useState(DEFAULT_MAX_SESSION_QUESTIONS);
 
   const loadingStyle = useMemo(() => {
     if (subscription?.effectivePlan === "ENTERPRISE") {
@@ -114,6 +126,8 @@ export default function Integrations() {
     setLanguage(data.language);
     setLauncherText((previous) => (typeof data.launcherText === "string" ? data.launcherText.trim() : previous));
     setLauncherIcon((previous) => data.launcherIcon || previous || "chat");
+    setInitialBotMessage(data.initialBotMessage?.trim() || DEFAULT_INITIAL_BOT_MESSAGE);
+    setMaxSessionQuestions(Number.isFinite(data.maxSessionQuestions) ? Math.min(20, Math.max(1, data.maxSessionQuestions)) : DEFAULT_MAX_SESSION_QUESTIONS);
   }, [data]);
 
   const effectiveData = useMemo(() => {
@@ -121,6 +135,8 @@ export default function Integrations() {
     const nextTheme = toSafeHexColor(themeColor || data?.themeColor || "#5A67D8");
     const nextLauncherText = launcherText.trim();
     const nextLauncherIcon = launcherIcon || data?.launcherIcon || "chat";
+    const nextInitialBotMessage = initialBotMessage.trim() || data?.initialBotMessage || DEFAULT_INITIAL_BOT_MESSAGE;
+    const nextMaxSessionQuestions = Math.min(20, Math.max(1, Number.isFinite(maxSessionQuestions) ? maxSessionQuestions : data?.maxSessionQuestions || DEFAULT_MAX_SESSION_QUESTIONS));
 
     return data
       ? {
@@ -132,9 +148,11 @@ export default function Integrations() {
           language,
           launcherText: nextLauncherText,
           launcherIcon: nextLauncherIcon,
+          initialBotMessage: nextInitialBotMessage,
+          maxSessionQuestions: nextMaxSessionQuestions,
         }
       : null;
-  }, [botName, data, language, launcherIcon, launcherText, position, themeColor, themeMode]);
+  }, [botName, data, initialBotMessage, language, launcherIcon, launcherText, maxSessionQuestions, position, themeColor, themeMode]);
 
   const selectedThemePreset = useMemo(() => {
     const normalized = (themeColor || data?.themeColor || "").toLowerCase();
@@ -153,6 +171,8 @@ export default function Integrations() {
         language,
         launcherText: launcherText.trim(),
         launcherIcon: launcherIcon || data?.launcherIcon || "chat",
+        initialBotMessage: initialBotMessage.trim() || data?.initialBotMessage || DEFAULT_INITIAL_BOT_MESSAGE,
+        maxSessionQuestions: Math.min(20, Math.max(1, maxSessionQuestions)),
       }),
     onSuccess: (updated) => {
       void queryClient.setQueryData(["integration-settings"], updated);
@@ -163,6 +183,8 @@ export default function Integrations() {
       setLanguage(updated.language);
       setLauncherText(updated.launcherText ?? launcherText.trim());
       setLauncherIcon(updated.launcherIcon ?? launcherIcon ?? "chat");
+      setInitialBotMessage(updated.initialBotMessage ?? (initialBotMessage.trim() || DEFAULT_INITIAL_BOT_MESSAGE));
+      setMaxSessionQuestions(Math.min(20, Math.max(1, updated.maxSessionQuestions ?? maxSessionQuestions)));
       toast({ title: "Saved", description: "Integration settings updated." });
     },
     onError: (error) => {
@@ -196,7 +218,7 @@ export default function Integrations() {
 
     const scriptHost = typeof window !== "undefined" ? window.location.origin : "https://yourapp.com";
 
-    return `<script src="${scriptHost}/chatbot.js" data-embed-key="${effectiveData.embedKey}" data-api-base="${API_BASE}" data-theme="${effectiveData.themeColor}" data-theme-mode="${effectiveData.themeMode}" data-position="${effectiveData.position}" data-language="${effectiveData.language}" data-bot-name="${effectiveData.botName}" data-launcher-text="${effectiveData.launcherText}" data-launcher-icon="${effectiveData.launcherIcon}" data-loading-style="${loadingStyle}"><\/script>`;
+    return `<script src="${scriptHost}/chatbot.js" data-embed-key="${escapeHtmlAttribute(effectiveData.embedKey)}" data-api-base="${escapeHtmlAttribute(API_BASE)}" data-theme="${escapeHtmlAttribute(effectiveData.themeColor)}" data-theme-mode="${escapeHtmlAttribute(effectiveData.themeMode)}" data-position="${escapeHtmlAttribute(effectiveData.position)}" data-language="${escapeHtmlAttribute(effectiveData.language)}" data-bot-name="${escapeHtmlAttribute(effectiveData.botName)}" data-launcher-text="${escapeHtmlAttribute(effectiveData.launcherText)}" data-launcher-icon="${escapeHtmlAttribute(effectiveData.launcherIcon)}" data-initial-message="${escapeHtmlAttribute(effectiveData.initialBotMessage || DEFAULT_INITIAL_BOT_MESSAGE)}" data-max-session-questions="${effectiveData.maxSessionQuestions}" data-loading-style="${loadingStyle}"><\/script>`;
   }, [effectiveData, loadingStyle]);
 
   const copySnippet = async () => {
@@ -294,6 +316,37 @@ export default function Integrations() {
             </div>
 
             <div className="space-y-2">
+              <label className="text-sm font-medium">First Bot Message</label>
+              <Textarea
+                value={initialBotMessage}
+                onChange={(event) => setInitialBotMessage(event.target.value.slice(0, 400))}
+                rows={3}
+                placeholder={DEFAULT_INITIAL_BOT_MESSAGE}
+              />
+              <p className="text-xs text-muted-foreground">This message is shown when the chat opens before the user sends anything.</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Max Questions Per Session</label>
+              <Input
+                type="number"
+                min={1}
+                max={20}
+                value={maxSessionQuestions}
+                onChange={(event) => {
+                  const parsed = Number.parseInt(event.target.value, 10);
+                  if (Number.isNaN(parsed)) {
+                    setMaxSessionQuestions(DEFAULT_MAX_SESSION_QUESTIONS);
+                    return;
+                  }
+
+                  setMaxSessionQuestions(Math.min(20, Math.max(1, parsed)));
+                }}
+              />
+              <p className="text-xs text-muted-foreground">After this number of user questions, the widget closes the chat session and stores it in Conversations.</p>
+            </div>
+
+            <div className="space-y-2">
               <label className="text-sm font-medium">Language</label>
               <select
                 className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
@@ -366,6 +419,8 @@ export default function Integrations() {
               language={effectiveData?.language ?? data.language}
               launcherText={effectiveData?.launcherText ?? data.launcherText ?? "Chat"}
               launcherIcon={effectiveData?.launcherIcon ?? data.launcherIcon ?? "chat"}
+              initialBotMessage={effectiveData?.initialBotMessage ?? data.initialBotMessage ?? DEFAULT_INITIAL_BOT_MESSAGE}
+              maxSessionQuestions={effectiveData?.maxSessionQuestions ?? data.maxSessionQuestions ?? DEFAULT_MAX_SESSION_QUESTIONS}
               themeMode={effectiveData?.themeMode ?? data.themeMode ?? "light"}
               loadingStyle={loadingStyle}
             />

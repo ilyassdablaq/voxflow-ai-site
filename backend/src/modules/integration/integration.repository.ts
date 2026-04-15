@@ -10,6 +10,8 @@ type IntegrationSettingsRecord = {
   language: string;
   launcherText: string;
   launcherIcon: "chat" | "message" | "sparkles" | "none";
+  initialBotMessage: string;
+  maxSessionQuestions: number;
   embedKey: string;
   updatedAt: Date;
 };
@@ -36,6 +38,8 @@ export class IntegrationRepository {
         language TEXT NOT NULL,
         launcher_text TEXT NOT NULL DEFAULT 'Chat',
         launcher_icon TEXT NOT NULL DEFAULT 'chat',
+        initial_bot_message TEXT NOT NULL DEFAULT 'Hi. Send me a message and I will reply here.',
+        max_session_questions INTEGER NOT NULL DEFAULT 3,
         embed_key TEXT UNIQUE NOT NULL,
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
       )
@@ -56,6 +60,16 @@ export class IntegrationRepository {
       ADD COLUMN IF NOT EXISTS theme_mode TEXT NOT NULL DEFAULT 'light'
     `);
 
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE integration_settings
+      ADD COLUMN IF NOT EXISTS initial_bot_message TEXT NOT NULL DEFAULT 'Hi. Send me a message and I will reply here.'
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE integration_settings
+      ADD COLUMN IF NOT EXISTS max_session_questions INTEGER NOT NULL DEFAULT 3
+    `);
+
     this.initialized = true;
   }
 
@@ -68,6 +82,8 @@ export class IntegrationRepository {
     language: string;
     launcher_text: string | null;
     launcher_icon: "chat" | "message" | "sparkles" | "none" | null;
+    initial_bot_message: string | null;
+    max_session_questions: number | null;
     embed_key: string;
     updated_at: Date;
   }): IntegrationSettingsRecord {
@@ -80,6 +96,8 @@ export class IntegrationRepository {
       language: row.language,
       launcherText: row.launcher_text ?? "Chat",
       launcherIcon: row.launcher_icon ?? "chat",
+      initialBotMessage: row.initial_bot_message ?? "Hi. Send me a message and I will reply here.",
+      maxSessionQuestions: row.max_session_questions ?? 3,
       embedKey: row.embed_key,
       updatedAt: row.updated_at,
     };
@@ -98,12 +116,14 @@ export class IntegrationRepository {
         language: string;
         launcher_text: string | null;
         launcher_icon: "chat" | "message" | "sparkles" | "none" | null;
+        initial_bot_message: string | null;
+        max_session_questions: number | null;
         embed_key: string;
         updated_at: Date;
       }>
     >(
       `
-        SELECT user_id, bot_name, theme_color, theme_mode, position, language, launcher_text, launcher_icon, embed_key, updated_at
+        SELECT user_id, bot_name, theme_color, theme_mode, position, language, launcher_text, launcher_icon, initial_bot_message, max_session_questions, embed_key, updated_at
         FROM integration_settings
         WHERE user_id = $1
       `,
@@ -117,8 +137,8 @@ export class IntegrationRepository {
     const embedKey = createEmbedKey();
     await prisma.$executeRawUnsafe(
       `
-        INSERT INTO integration_settings (user_id, bot_name, theme_color, theme_mode, position, language, launcher_text, launcher_icon, embed_key, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+        INSERT INTO integration_settings (user_id, bot_name, theme_color, theme_mode, position, language, launcher_text, launcher_icon, initial_bot_message, max_session_questions, embed_key, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
       `,
       userId,
       "Chatbot",
@@ -128,6 +148,8 @@ export class IntegrationRepository {
       "en",
       "Chat",
       "chat",
+      "Hi. Send me a message and I will reply here.",
+      3,
       embedKey,
     );
 
@@ -140,6 +162,8 @@ export class IntegrationRepository {
       language: "en",
       launcherText: "Chat",
       launcherIcon: "chat",
+      initialBotMessage: "Hi. Send me a message and I will reply here.",
+      maxSessionQuestions: 3,
       embedKey,
       updatedAt: new Date(),
     } as IntegrationSettingsRecord;
@@ -153,6 +177,8 @@ export class IntegrationRepository {
     language: string;
     launcherText: string;
     launcherIcon: "chat" | "message" | "sparkles" | "none";
+    initialBotMessage: string;
+    maxSessionQuestions: number;
   }) {
     await this.ensureTable();
 
@@ -168,6 +194,8 @@ export class IntegrationRepository {
             language = $6,
             launcher_text = $7,
             launcher_icon = $8,
+            initial_bot_message = $9,
+            max_session_questions = $10,
             updated_at = NOW()
         WHERE user_id = $1
       `,
@@ -179,6 +207,8 @@ export class IntegrationRepository {
       payload.language,
       payload.launcherText,
       payload.launcherIcon,
+      payload.initialBotMessage,
+      payload.maxSessionQuestions,
     );
 
     return this.getOrCreateByUserId(userId);
@@ -217,12 +247,14 @@ export class IntegrationRepository {
         language: string;
         launcher_text: string | null;
         launcher_icon: "chat" | "message" | "sparkles" | "none" | null;
+        initial_bot_message: string | null;
+        max_session_questions: number | null;
         embed_key: string;
         updated_at: Date;
       }>
     >(
       `
-        SELECT user_id, bot_name, theme_color, theme_mode, position, language, launcher_text, launcher_icon, embed_key, updated_at
+        SELECT user_id, bot_name, theme_color, theme_mode, position, language, launcher_text, launcher_icon, initial_bot_message, max_session_questions, embed_key, updated_at
         FROM integration_settings
         WHERE embed_key = $1
       `,

@@ -9,16 +9,22 @@ interface ChatWidgetPreviewProps {
   language: string;
   launcherText: string;
   launcherIcon: "chat" | "message" | "sparkles" | "none";
+  initialBotMessage: string;
+  maxSessionQuestions: number;
   loadingStyle?: "free" | "pro" | "enterprise";
 }
 
-const sampleMessages = [
-  { role: "assistant" as const, text: "Hi. Send me a message and I will reply here." },
-  { role: "user" as const, text: "Hallo" },
-  { role: "assistant" as const, text: "Natürlich. Ich kann dir bei Fragen zu deinem Produkt oder deiner Website helfen." },
-  { role: "user" as const, text: "why" },
-  { role: "assistant" as const, text: "Because the widget now mirrors the embedded version and shows a live preview of the response flow." },
-];
+const DEFAULT_INITIAL_BOT_MESSAGE = "Hi. Send me a message and I will reply here.";
+
+function buildSampleMessages(initialBotMessage: string) {
+  return [
+    { role: "assistant" as const, text: initialBotMessage.trim() || DEFAULT_INITIAL_BOT_MESSAGE },
+    { role: "user" as const, text: "Hallo" },
+    { role: "assistant" as const, text: "Natürlich. Ich kann dir bei Fragen zu deinem Produkt oder deiner Website helfen." },
+    { role: "user" as const, text: "why" },
+    { role: "assistant" as const, text: "Because the widget now mirrors the embedded version and shows a live preview of the response flow." },
+  ];
+}
 
 function isLightColor(color: string) {
   if (typeof color !== "string") {
@@ -40,7 +46,7 @@ function isLightColor(color: string) {
   return luminance > 0.64;
 }
 
-export function ChatWidgetPreview({ botName, themeColor, themeMode, position, language, launcherText, launcherIcon, loadingStyle = "free" }: ChatWidgetPreviewProps) {
+export function ChatWidgetPreview({ botName, themeColor, themeMode, position, language, launcherText, launcherIcon, initialBotMessage, maxSessionQuestions, loadingStyle = "free" }: ChatWidgetPreviewProps) {
   const textTone = isLightColor(themeColor) ? "#0f172a" : "#ffffff";
   const accentTone = isLightColor(themeColor) ? "rgba(15, 23, 42, 0.18)" : "rgba(255, 255, 255, 0.18)";
   const launcherLabel = launcherText.trim();
@@ -69,6 +75,7 @@ export function ChatWidgetPreview({ botName, themeColor, themeMode, position, la
     : launcherIcon === "message"
       ? MessageSquare
       : MessageCircle;
+  const sampleMessages = buildSampleMessages(initialBotMessage);
 
   return (
     <div className="overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-4 shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
@@ -100,9 +107,9 @@ export function ChatWidgetPreview({ botName, themeColor, themeMode, position, la
             <div>
               <p className="text-base font-semibold tracking-tight">{botName}</p>
             </div>
-            <div className="rounded-full border border-white/15 bg-white/15 px-3 py-1 text-[11px] font-semibold text-white/90">
-              Online
-            </div>
+            <button type="button" className="rounded-full border border-white/15 bg-white/15 px-3 py-1 text-xs font-semibold text-white/90">
+              X
+            </button>
           </div>
 
           <div className={cn("flex-1 space-y-3 p-4", isDarkMode ? "bg-gradient-to-b from-slate-900 to-slate-950" : "bg-gradient-to-b from-slate-50 to-white")}>
@@ -160,7 +167,7 @@ export function ChatWidgetPreview({ botName, themeColor, themeMode, position, la
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-slate-100 backdrop-blur">
           <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Theme</p>
           <p className="mt-1 text-sm font-semibold">{themeMode === "dark" ? "Dark" : "Light"} · {themeColor}</p>
@@ -172,6 +179,10 @@ export function ChatWidgetPreview({ botName, themeColor, themeMode, position, la
         <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-slate-100 backdrop-blur">
           <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Position</p>
           <p className="mt-1 text-sm font-semibold">{position === "bottom-left" ? "Left" : "Right"}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-slate-100 backdrop-blur">
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Session Limit</p>
+          <p className="mt-1 text-sm font-semibold">{Math.min(20, Math.max(1, maxSessionQuestions))} questions</p>
         </div>
       </div>
     </div>

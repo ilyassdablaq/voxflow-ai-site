@@ -9,6 +9,8 @@ export interface IntegrationSettings {
   language: string;
   launcherText: string;
   launcherIcon: "chat" | "message" | "sparkles" | "none";
+  initialBotMessage: string;
+  maxSessionQuestions: number;
   embedKey: string;
   updatedAt: string;
 }
@@ -26,6 +28,8 @@ export const integrationService = {
     language: string;
     launcherText: string;
     launcherIcon: "chat" | "message" | "sparkles" | "none";
+    initialBotMessage: string;
+    maxSessionQuestions: number;
   }) {
     return apiClient.put<IntegrationSettings>("/api/integrations/settings", payload);
   },

@@ -63,6 +63,25 @@ export class ConversationRepository {
     return recent.reverse();
   }
 
+  async countMessagesByRole(conversationId: string, role: "USER" | "ASSISTANT" | "SYSTEM") {
+    return prisma.message.count({
+      where: {
+        conversationId,
+        role,
+      },
+    });
+  }
+
+  async markConversationEnded(conversationId: string) {
+    return prisma.conversation.update({
+      where: { id: conversationId },
+      data: {
+        status: "ENDED",
+        endedAt: new Date(),
+      },
+    });
+  }
+
   async listConversations(userId: string, page: number, limit: number) {
     const skip = (page - 1) * limit;
 

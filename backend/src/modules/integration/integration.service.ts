@@ -29,6 +29,7 @@ export class IntegrationService {
     if (!integration) {
       throw new AppError(401, "INVALID_EMBED_KEY", "Invalid embed key");
     }
+    const maxSessionQuestions = Math.max(1, integration.maxSessionQuestions || 3);
 
     let conversationId = payload.conversationId;
     if (conversationId) {
@@ -42,6 +43,10 @@ export class IntegrationService {
       } catch {
         throw new AppError(403, "FORBIDDEN", "Conversation does not belong to this embed key");
       }
+
+      if (conversation.status === "ENDED") {
+        throw new AppError(429, "EMBED_SESSION_LIMIT_REACHED", `This chat session has reached the ${maxSessionQuestions}-question limit.`);
+      }
     } else {
       const conversation = await this.conversationRepository.createConversation({
         userId: integration.userId,
@@ -49,6 +54,12 @@ export class IntegrationService {
         language: payload.language ?? integration.language,
       });
       conversationId = conversation.id;
+    }
+
+    const userMessageCount = await this.conversationRepository.countMessagesByRole(conversationId, "USER");
+    if (userMessageCount >= maxSessionQuestions) {
+      await this.conversationRepository.markConversationEnded(conversationId);
+      throw new AppError(429, "EMBED_SESSION_LIMIT_REACHED", `This chat session has reached the ${maxSessionQuestions}-question limit.`);
     }
 
     await this.conversationRepository.createMessage({
@@ -76,9 +87,20 @@ export class IntegrationService {
       audioUrl: `data:${ai.audioMimeType};base64,${ai.audioBase64}`,
     });
 
+    const questionCount = userMessageCount + 1;
+    const remainingQuestions = Math.max(0, maxSessionQuestions - questionCount);
+    const sessionCompleted = questionCount >= maxSessionQuestions;
+
+    if (sessionCompleted) {
+      await this.conversationRepository.markConversationEnded(conversationId);
+    }
+
     return {
       conversationId,
       botName: integration.botName,
+      maxSessionQuestions,
+      remainingQuestions,
+      sessionCompleted,
       message: {
         id: assistantMessage.id,
         role: "ASSISTANT",
