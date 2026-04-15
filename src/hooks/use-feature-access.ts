@@ -7,11 +7,11 @@ export function useFeatureAccess() {
   const { subscription } = useAuth();
 
   const FEATURE_PLAN_MAP: Record<string, 'FREE' | 'PRO' | 'ENTERPRISE'> = {
-    'workflows': 'PRO',
-    'workflow_create': 'PRO',
-    'workflow_execute': 'PRO',
-    'analytics': 'PRO',
-    'analytics_dashboard': 'PRO',
+    'workflows': 'FREE',
+    'workflow_create': 'FREE',
+    'workflow_execute': 'FREE',
+    'analytics': 'FREE',
+    'analytics_dashboard': 'FREE',
   };
 
   const planHierarchy: Record<string, number> = {
