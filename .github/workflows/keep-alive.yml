@@ -1,0 +1,38 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Führe alle 10 Minuten aus (vor der 15-min Render-Grenze)
+    - cron: '*/10 * * * *'
+  workspace_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Backend Health Endpoint
+        run: |
+          echo "🔄 Pinging backend at: ${{ secrets.BACKEND_URL }}"
+          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.BACKEND_URL }}/health")
+          
+          if [ "$response" = "200" ]; then
+            echo "✓ Backend is alive (HTTP $response)"
+            exit 0
+          else
+            echo "✗ Backend returned HTTP $response"
+            exit 1
+          fi
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+        continue-on-error: true
+
+      - name: Log Success
+        if: success()
+        run: echo "✓ Keep-alive check completed successfully at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+      - name: Log Failure
+        if: failure()
+        run: echo "⚠️ Backend might be sleeping, but will recover on next request"

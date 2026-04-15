@@ -2,6 +2,7 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { DashboardShell } from "./DashboardShell";
+import { ThemeProvider } from "@/hooks/use-theme";
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: vi.fn(),
@@ -27,9 +28,11 @@ describe("DashboardShell admin navigation", () => {
 
     render(
       <MemoryRouter>
-        <DashboardShell title="Dashboard" description="desc">
-          <div>content</div>
-        </DashboardShell>
+        <ThemeProvider>
+          <DashboardShell title="Dashboard" description="desc">
+            <div>content</div>
+          </DashboardShell>
+        </ThemeProvider>
       </MemoryRouter>,
     );
 
@@ -45,9 +48,11 @@ describe("DashboardShell admin navigation", () => {
 
     render(
       <MemoryRouter>
-        <DashboardShell title="Dashboard" description="desc">
-          <div>content</div>
-        </DashboardShell>
+        <ThemeProvider>
+          <DashboardShell title="Dashboard" description="desc">
+            <div>content</div>
+          </DashboardShell>
+        </ThemeProvider>
       </MemoryRouter>,
     );
 
