@@ -1,10 +1,12 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import { AuthProvider } from "@/hooks/use-auth";
+import { ThemeProvider } from "@/hooks/use-theme";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ProFeatureRoute } from "./components/ProFeatureRoute";
 import { AdminRoute } from "./components/AdminRoute";
@@ -42,14 +44,16 @@ const routeFallback = (
 );
 
 const App = () => (
-  <AuthProvider>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AppErrorBoundary>
-        <BrowserRouter>
-          <Suspense fallback={routeFallback}>
-            <Routes>
+  <ThemeProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <Analytics />
+        <AppErrorBoundary>
+          <BrowserRouter>
+            <Suspense fallback={routeFallback}>
+              <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/features" element={<Features />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
@@ -165,12 +169,13 @@ const App = () => (
                 }
               />
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </AppErrorBoundary>
-    </TooltipProvider>
-  </AuthProvider>
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </AppErrorBoundary>
+      </TooltipProvider>
+    </AuthProvider>
+  </ThemeProvider>
 );
 
 export default App;

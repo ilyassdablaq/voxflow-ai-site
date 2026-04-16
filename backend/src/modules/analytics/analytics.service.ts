@@ -47,7 +47,7 @@ export class AnalyticsService {
   async getDashboardAnalytics(userId: string, query: AnalyticsQueryInput) {
     const startDate = parseRange(query.range);
 
-    const conversations = await prisma.conversation.findMany({
+    const conversationsInRange = await prisma.conversation.findMany({
       where: {
         userId,
         createdAt: {
@@ -65,7 +65,25 @@ export class AnalyticsService {
       },
     });
 
+    const conversations =
+      conversationsInRange.length > 0 || query.conversationId
+        ? conversationsInRange
+        : await prisma.conversation.findMany({
+            where: {
+              userId,
+            },
+            select: {
+              id: true,
+              title: true,
+              createdAt: true,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+          });
+
     const conversationIds = conversations.map((conversation) => conversation.id);
+            const shouldUseRangeFilter = conversationsInRange.length > 0 || query.conversationId;
 
     if (conversationIds.length === 0) {
       return {
@@ -89,9 +107,13 @@ export class AnalyticsService {
         conversationId: {
           in: conversationIds,
         },
-        createdAt: {
-          gte: startDate,
-        },
+        ...(shouldUseRangeFilter
+          ? {
+              createdAt: {
+                gte: startDate,
+              },
+            }
+          : {}),
       },
       select: {
         conversationId: true,
