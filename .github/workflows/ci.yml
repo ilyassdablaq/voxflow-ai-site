@@ -188,12 +188,6 @@ jobs:
         run: npm ci
 
       - name: Frontend dependency audit
-        if: github.ref == 'refs/heads/main'
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: Frontend dependency audit (tolerant off-main)
-        if: github.ref != 'refs/heads/main'
-        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
 
       - name: Install backend dependencies
@@ -201,14 +195,7 @@ jobs:
         run: npm ci
 
       - name: Backend dependency audit
-        if: github.ref == 'refs/heads/main'
         working-directory: backend
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: Backend dependency audit (tolerant off-main)
-        if: github.ref != 'refs/heads/main'
-        working-directory: backend
-        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
 
   deploy-development:

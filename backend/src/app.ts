@@ -100,6 +100,40 @@ export async function buildApp() {
     timestamp: new Date().toISOString(),
   }));
 
+  app.get("/robots.txt", async (_request, reply) => {
+    const appOrigin = env.APP_ORIGIN.replace(/\/+$/, "");
+    reply.type("text/plain; charset=utf-8").send([
+      "User-agent: *",
+      "Allow: /",
+      "Disallow: /api/",
+      `Host: ${appOrigin}`,
+      `Sitemap: ${appOrigin}/sitemap.xml`,
+      "",
+    ].join("\n"));
+  });
+
+  app.get("/sitemap.xml", async (_request, reply) => {
+    const appOrigin = env.APP_ORIGIN.replace(/\/+$/, "");
+    const xml = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      "  <url>",
+      `    <loc>${appOrigin}/</loc>`,
+      "    <changefreq>weekly</changefreq>",
+      "    <priority>1.0</priority>",
+      "  </url>",
+      "  <url>",
+      `    <loc>${appOrigin}/health</loc>`,
+      "    <changefreq>daily</changefreq>",
+      "    <priority>0.8</priority>",
+      "  </url>",
+      "</urlset>",
+      "",
+    ].join("\n");
+
+    reply.type("application/xml; charset=utf-8").send(xml);
+  });
+
   await app.register(authRoutes);
   await app.register(contactRoutes);
   await app.register(planRoutes);

@@ -23,6 +23,13 @@ jobs:
 
           TARGET_URL="$BACKEND_URL"
           HEALTH_URL="${TARGET_URL%/}/health"
+          ROOT_URL="${TARGET_URL%/}/"
 
           echo "Pinging ${HEALTH_URL}"
-          curl --fail --silent --show-error --max-time 30 --retry 6 --retry-delay 10 --retry-all-errors "${HEALTH_URL}"
+          if curl --fail --silent --show-error --max-time 30 --retry 6 --retry-delay 10 --retry-all-errors "${HEALTH_URL}"; then
+            echo "Health check successful"
+            exit 0
+          fi
+
+          echo "Health endpoint failed, trying root endpoint ${ROOT_URL}"
+          curl --fail --silent --show-error --max-time 30 --retry 4 --retry-delay 10 --retry-all-errors "${ROOT_URL}"
