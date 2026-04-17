@@ -150,7 +150,7 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}:/repo" \
             zricethezav/gitleaks:latest dir \
-            --source /repo \
+            /repo \
             --redact \
             --report-format sarif \
             --report-path /repo/gitleaks.sarif \
