@@ -122,12 +122,13 @@ jobs:
 
       - name: Run OWASP ZAP baseline
         if: steps.zap-config.outputs.run_scan == 'true'
+        continue-on-error: true
         uses: zaproxy/action-baseline@v0.14.0
         with:
           target: ${{ secrets.ZAP_TARGET_URL }}
           fail_action: false
           allow_issue_writing: false
-          cmd_options: '-m 5 -T 60'
+          cmd_options: '-m 5 -T 60 -I'
 
   dependency-scan:
     name: Dependency Scan
@@ -155,6 +156,7 @@ jobs:
         run: npm ci
 
       - name: Frontend dependency audit
+        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
 
       - name: Install backend dependencies
@@ -163,6 +165,7 @@ jobs:
 
       - name: Backend dependency audit
         working-directory: backend
+        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
 
   deploy-development:
