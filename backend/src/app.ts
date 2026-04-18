@@ -101,7 +101,11 @@ export async function buildApp() {
     timestamp: new Date().toISOString(),
   }));
 
-  app.get("/keep-alive", async (_request, reply) => {
+  app.get("/keep-alive", {
+    config: {
+      rateLimit: false,
+    },
+  }, async (_request, reply) => {
     reply.code(200).type("text/plain; charset=utf-8").send("OK");
   });
 
