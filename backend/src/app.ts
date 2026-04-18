@@ -79,6 +79,7 @@ export async function buildApp() {
     version: "1.0.0",
     endpoints: {
       health: "/health",
+      keepAlive: "/keep-alive",
       auth: "/api/auth",
       plans: "/api/plans",
       conversations: "/api/conversations",
@@ -99,6 +100,10 @@ export async function buildApp() {
     service: "voxai-backend",
     timestamp: new Date().toISOString(),
   }));
+
+  app.get("/keep-alive", async (_request, reply) => {
+    reply.code(200).type("text/plain; charset=utf-8").send("OK");
+  });
 
   app.get("/robots.txt", async (_request, reply) => {
     const appOrigin = env.APP_ORIGIN.replace(/\/+$/, "");

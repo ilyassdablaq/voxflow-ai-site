@@ -11,14 +11,14 @@ const https = require("https");
 // Configuration
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
 const PING_INTERVAL = parseInt(process.env.PING_INTERVAL || "600000", 10); // 10 minutes
-const HEALTH_ENDPOINT = "/health";
+const KEEP_ALIVE_ENDPOINT = "/keep-alive";
 
 const isHttps = BACKEND_URL.startsWith("https");
 const client = isHttps ? https : http;
 
 function ping() {
   return new Promise((resolve, reject) => {
-    const url = new URL(HEALTH_ENDPOINT, BACKEND_URL);
+    const url = new URL(KEEP_ALIVE_ENDPOINT, BACKEND_URL);
 
     const options = {
       method: "GET",

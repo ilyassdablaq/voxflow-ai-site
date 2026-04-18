@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Keep backend alive
         run: |
-          curl -f ${{ secrets.BACKEND_URL }}/health || exit 1
+          curl -f ${{ secrets.BACKEND_URL }}/keep-alive || exit 1
         env:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
 ```
@@ -103,7 +103,7 @@ A: Nein, die Pings sind sehr leicht und verursachen praktisch keine zusätzliche
 A: Ja, GitHub Actions sind für Public Repositories kostenlos und auch Private Repositories bekommen 2000 Minuten/Monat kostenlos.
 
 **F: Muss ich etwas im Code ändern?**
-A: Nein, das Skript nutzt bereits den vorhandenen `/health` Endpoint deines Backends.
+A: Nein, das Skript nutzt den dedizierten `/keep-alive` Endpoint deines Backends.
 
 ## Debugging
 
