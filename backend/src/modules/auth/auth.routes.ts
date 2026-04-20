@@ -42,6 +42,10 @@ function clearAuthCookies(reply: { clearCookie: (name: string, options: { path: 
   reply.clearCookie("refreshToken", { path: "/" });
 }
 
+function recordAuthAuditLog(entry: Parameters<typeof auditLogService.log>[0]): void {
+  void auditLogService.log(entry);
+}
+
 
 export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   const authService = new AuthService(fastify, new AuthRepository());
@@ -53,9 +57,8 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const result = await authService.register(request.body as RegisterInput);
       applyAuthCookies(fastify, reply, result.accessToken, result.refreshToken);
-      
-      // Audit log
-      await auditLogService.log({
+
+      recordAuthAuditLog({
         principalType: "system",
         principalId: "anonymous",
         action: "auth.register",
@@ -68,7 +71,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.status(201).send(result);
     } catch (error) {
-      await auditLogService.log({
+      recordAuthAuditLog({
         principalType: "system",
         principalId: "anonymous",
         action: "auth.register",
@@ -90,9 +93,8 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const result = await authService.login(request.body as LoginInput);
       applyAuthCookies(fastify, reply, result.accessToken, result.refreshToken);
-      
-      // Audit log
-      await auditLogService.log({
+
+      recordAuthAuditLog({
         principalType: "system",
         principalId: "anonymous",
         action: "auth.login",
@@ -106,7 +108,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       return result;
     } catch (error) {
       const requestBody = request.body as Partial<LoginInput> | undefined;
-      await auditLogService.log({
+      recordAuthAuditLog({
         principalType: "system",
         principalId: "anonymous",
         action: "auth.login",
@@ -149,8 +151,8 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   }, async (request, reply) => {
     try {
       await authService.forgotPassword(request.body as ForgotPasswordInput);
-      
-      await auditLogService.log({
+
+      recordAuthAuditLog({
         principalType: "system",
         principalId: "anonymous",
         action: "auth.forgot_password",
@@ -163,7 +165,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.status(200).send({ message: "Reset email sent if account exists" });
     } catch (error) {
       const requestBody = request.body as Partial<ForgotPasswordInput> | undefined;
-      await auditLogService.log({
+      recordAuthAuditLog({
         principalType: "system",
         principalId: "anonymous",
         action: "auth.forgot_password",
@@ -183,8 +185,8 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   }, async (request, reply) => {
     try {
       await authService.resetPassword(request.body as ResetPasswordInput);
-      
-      await auditLogService.log({
+
+      recordAuthAuditLog({
         principalType: "system",
         principalId: "anonymous",
         action: "auth.reset_password",
@@ -196,7 +198,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
 
       return reply.status(200).send({ message: "Password reset successfully" });
     } catch (error) {
-      await auditLogService.log({
+      recordAuthAuditLog({
         principalType: "system",
         principalId: "anonymous",
         action: "auth.reset_password",

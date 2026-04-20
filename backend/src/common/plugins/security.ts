@@ -64,7 +64,6 @@ export async function registerSecurityPlugins(fastify: FastifyInstance): Promise
   await fastify.register(rateLimit, {
     max: 1000,
     timeWindow: "1 minute",
-    redis,
     skipOnError: true,
     addHeadersOnExceeding: {
       "x-ratelimit-limit": true,
