@@ -1,5 +1,5 @@
 import { logger } from "../../config/logger.js";
-import { enqueueWithPolicy, outboxQueue } from "../../infra/queue/queues.js";
+import { enqueueWithPolicy } from "../../infra/queue/queues.js";
 import { prisma } from "../../infra/database/prisma.js";
 
 export type DomainEvent = {
@@ -38,7 +38,7 @@ export async function publishDomainEvent(event: DomainEvent): Promise<void> {
 
     // 2. Attempt async queue dispatch (best effort)
     await enqueueWithPolicy(
-      outboxQueue,
+      "outbox",
       "domain-event",
       {
         ...event,
@@ -83,7 +83,7 @@ export async function processOutboxEvents(batchSize: number = 100): Promise<numb
     try {
       // Attempt to enqueue for processing
       await enqueueWithPolicy(
-        outboxQueue,
+        "outbox",
         "domain-event",
         event,
         {

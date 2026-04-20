@@ -2,8 +2,16 @@ import { Redis } from "ioredis";
 import { env } from "../../config/env.js";
 import { logger } from "../../config/logger.js";
 
+function normalizeRedisUrl(rawUrl: string): string {
+  if (rawUrl.startsWith("redis://") && rawUrl.includes("upstash.io")) {
+    return rawUrl.replace("redis://", "rediss://");
+  }
+
+  return rawUrl;
+}
+
 function createRedisClient(client: "redis" | "redisPublisher" | "redisSubscriber") {
-  const instance = new Redis(env.REDIS_URL, {
+  const instance = new Redis(normalizeRedisUrl(env.REDIS_URL), {
     lazyConnect: true,
     enableOfflineQueue: false,
     connectTimeout: 2000,

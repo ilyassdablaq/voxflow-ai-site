@@ -3,7 +3,7 @@ import { AiOrchestratorService } from "../../services/ai/ai-orchestrator.service
 import { UsageService } from "../billing/usage.service.js";
 import { ConversationRepository } from "./conversation.repository.js";
 import { CreateConversationInput, UpdateConversationInput } from "./conversation.schemas.js";
-import { aiTasksQueue, enqueueWithPolicy, transcriptionQueue } from "../../infra/queue/queues.js";
+import { enqueueWithPolicy } from "../../infra/queue/queues.js";
 import { publishDomainEvent } from "../../common/services/outbox.service.js";
 import { assertTenantAccess } from "../../common/services/tenant-guard.service.js";
 
@@ -57,7 +57,7 @@ export class ConversationService {
         tokensUsed: ai.tokenCount,
       });
 
-      await enqueueWithPolicy(aiTasksQueue, "conversation-initial-response", {
+      await enqueueWithPolicy("aiTasks", "conversation-initial-response", {
         conversationId: conversation.id,
         userId,
       });
@@ -70,7 +70,7 @@ export class ConversationService {
           conversationId: conversation.id,
         },
       });
-      await enqueueWithPolicy(transcriptionQueue, "transcription-audit", {
+      await enqueueWithPolicy("transcription", "transcription-audit", {
         conversationId: conversation.id,
       });
     }

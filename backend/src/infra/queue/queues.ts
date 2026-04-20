@@ -14,9 +14,49 @@ const defaultJobOptions: JobsOptions = {
   removeOnFail: 500,
 };
 
+function normalizeRedisUrl(rawUrl: string): string {
+  if (rawUrl.startsWith("redis://") && rawUrl.includes("upstash.io")) {
+    return rawUrl.replace("redis://", "rediss://");
+  }
+
+  return rawUrl;
+}
+
 const bullConnection = {
-  url: env.REDIS_URL,
+  url: normalizeRedisUrl(env.REDIS_URL),
 };
+
+const queueInstances = new Map<QueueName, Queue>();
+
+function getQueueDefaultOptions(name: QueueName): JobsOptions {
+  if (name === "deadLetter") {
+    return {
+      removeOnComplete: 200,
+      removeOnFail: 1000,
+    };
+  }
+
+  return defaultJobOptions;
+}
+
+function getQueue(queueName: QueueName): Queue {
+  const existing = queueInstances.get(queueName);
+  if (existing) {
+    return existing;
+  }
+
+  const queue = new Queue(queueName, {
+    connection: bullConnection,
+    defaultJobOptions: getQueueDefaultOptions(queueName),
+  });
+
+  queue.on("error", (error) => {
+    logger.warn({ queue: queueName, error: error.message }, "Queue connection error");
+  });
+
+  queueInstances.set(queueName, queue);
+  return queue;
+}
 
 type EnqueueOptions = {
   idempotencyKey?: string;
@@ -24,41 +64,15 @@ type EnqueueOptions = {
   delayMs?: number;
 };
 
-export const transcriptionQueue = new Queue("transcription", {
-  connection: bullConnection,
-  defaultJobOptions,
-});
-
-export const webhookQueue = new Queue("webhook", {
-  connection: bullConnection,
-  defaultJobOptions,
-});
-
-export const aiTasksQueue = new Queue("aiTasks", {
-  connection: bullConnection,
-  defaultJobOptions,
-});
-
-export const outboxQueue = new Queue("outbox", {
-  connection: bullConnection,
-  defaultJobOptions,
-});
-
-export const deadLetterQueue = new Queue("deadLetter", {
-  connection: bullConnection,
-  defaultJobOptions: {
-    removeOnComplete: 200,
-    removeOnFail: 1000,
-  },
-});
-
 export async function enqueueWithPolicy(
-  queue: Queue,
+  queue: QueueName | Queue,
   name: string,
   data: Record<string, unknown>,
   options?: EnqueueOptions,
 ) {
-  return queue.add(name, data, {
+  const queueInstance = typeof queue === "string" ? getQueue(queue) : queue;
+
+  return queueInstance.add(name, data, {
     ...defaultJobOptions,
     attempts: options?.attempts ?? defaultJobOptions.attempts,
     delay: options?.delayMs,
@@ -113,7 +127,7 @@ export function startWorkers(): Worker[] {
           };
 
           await enqueueWithPolicy(
-            webhookQueue,
+            "webhook",
             eventData.eventType ?? "domain-event",
             {
               eventId: eventData.eventId,
@@ -140,6 +154,10 @@ export function startWorkers(): Worker[] {
   ];
 
   for (const { name, worker } of workers) {
+    worker.on("error", (error) => {
+      logger.warn({ queue: name, error: error.message }, "Worker connection error");
+    });
+
     worker.on("failed", (job, error) => {
       logger.error({ queue: name, jobId: job?.id, error }, "Queue job failed");
 
@@ -150,7 +168,7 @@ export function startWorkers(): Worker[] {
       const maxAttempts = job.opts.attempts ?? defaultJobOptions.attempts ?? 1;
       if (job.attemptsMade >= maxAttempts) {
         void enqueueWithPolicy(
-          deadLetterQueue,
+          "deadLetter",
           `${name}.${job.name}`,
           {
             sourceQueue: name,
