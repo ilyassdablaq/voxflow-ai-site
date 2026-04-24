@@ -8,9 +8,10 @@ import { AppError } from "../../common/errors/app-error.js";
 
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? ("none" as const) : ("lax" as const),
+  secure: true,
+  sameSite: "none" as const,
   path: "/",
+  domain: ".onrender.com",
 };
 
 function applyAuthCookies(
