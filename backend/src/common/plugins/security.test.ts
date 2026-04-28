@@ -1,105 +1,193 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { FastifyInstance } from "fastify";
-import fastify from "fastify";
-import helmet from "@fastify/helmet";
-import cors from "@fastify/cors";
-import rateLimit from "@fastify/rate-limit";
+import Fastify, { FastifyInstance } from "fastify";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { registerSecurityPlugins } from "./security";
 
-// Mocks for external dependencies
-vi.mock("../../config/env.js", () => ({ env: { NODE_ENV: "test", JWT_ACCESS_SECRET: "test", JWT_REFRESH_SECRET: "test" } }));
-vi.mock("../../infra/cache/redis.js", () => ({ redis: {} }));
-vi.mock("../../infra/database/prisma.js", () => ({ prisma: { aPIKey: { findUnique: vi.fn() } } }));
-vi.mock("../services/plan-rate-limit.service.js", () => ({ rateLimitService: { checkRequestLimit: vi.fn().mockResolvedValue(true) } }));
-vi.mock("../services/plan-check.service.js", () => ({ PlanCheckService: vi.fn().mockImplementation(() => ({ getEffectivePlanAccess: vi.fn().mockResolvedValue({ type: "FREE" }) })) }));
-vi.mock("../errors/app-error.js", () => ({ AppError: class extends Error { code = 429; constructor(status, code, message) { super(message); this.status = status; this.code = code; } } }));
-vi.mock("../../config/logger.js", () => ({ logger: { warn: vi.fn(), error: vi.fn() } }));
+const mockApiKeyFindUnique = vi.fn();
+const mockCheckRequestLimit = vi.fn();
+const mockGetEffectivePlanAccess = vi.fn();
+const mockLoggerWarn = vi.fn();
+const mockLoggerError = vi.fn();
 
+vi.mock("../../config/env.js", () => ({
+  env: {
+    NODE_ENV: "test",
+    JWT_ACCESS_SECRET: "test-access-secret",
+    JWT_REFRESH_SECRET: "test-refresh-secret",
+  },
+}));
+
+vi.mock("../../infra/cache/redis.js", () => ({
+  redis: {},
+}));
+
+vi.mock("../../infra/database/prisma.js", () => ({
+  prisma: {
+    aPIKey: {
+      findUnique: mockApiKeyFindUnique,
+    },
+  },
+}));
+
+vi.mock("../services/plan-rate-limit.service.js", () => ({
+  rateLimitService: {
+    checkRequestLimit: mockCheckRequestLimit,
+  },
+}));
+
+vi.mock("../services/plan-check.service.js", () => ({
+  PlanCheckService: vi.fn().mockImplementation(() => ({
+    getEffectivePlanAccess: mockGetEffectivePlanAccess,
+  })),
+}));
+
+vi.mock("../../config/logger.js", () => ({
+  logger: {
+    warn: mockLoggerWarn,
+    error: mockLoggerError,
+  },
+}));
 
 describe("registerSecurityPlugins", () => {
-  let app: FastifyInstance;
+  let app: FastifyInstance | undefined;
 
-  beforeEach(async () => {
-    app = fastify();
+  async function setupApp() {
+    app = Fastify();
+    app.decorateRequest("user", null);
+
+    app.addHook("onRequest", async (request) => {
+      const serializedUser = request.headers["x-test-user"];
+      if (typeof serializedUser === "string") {
+        (request as any).user = JSON.parse(serializedUser);
+      }
+    });
+
+    await registerSecurityPlugins(app);
+
+    app.get("/test", async (request) => ({
+      ok: true,
+      userPlan: (request as any).userPlan ?? null,
+    }));
+
+    await app.ready();
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockApiKeyFindUnique.mockResolvedValue(null);
+    mockCheckRequestLimit.mockResolvedValue(true);
+    mockGetEffectivePlanAccess.mockResolvedValue({ type: "FREE" });
   });
 
   afterEach(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+      app = undefined;
+    }
   });
 
-  it("registers helmet, cors, and rateLimit plugins without error", async () => {
-    await expect(registerSecurityPlugins(app)).resolves.not.toThrow();
-    // Plugins registrieren sich ohne Fehler
-  });
-  it("rejects non-allowed origins (CORS)", async () => {
-    // Setze restriktive Allowlist
-    const orig = require("./security");
-    orig.ALLOWED_ORIGINS.length = 0;
-    orig.ALLOWED_ORIGINS.push("https://trusted.com");
-    await registerSecurityPlugins(app);
-    const response = await app.inject({
-      method: "OPTIONS",
-      url: "/test",
-      headers: { Origin: "https://evil.com", "Access-Control-Request-Method": "GET" },
-    });
-    expect(response.statusCode).toBe(500);
-    orig.ALLOWED_ORIGINS.length = 0;
-    orig.ALLOWED_ORIGINS.push(/.*/); // Reset
-  });
+  it("registers the security plugins and serves anonymous requests", async () => {
+    await setupApp();
 
-  it("returns 429 if plan-based rate limit exceeded", async () => {
-    const { rateLimitService } = await import("../services/plan-rate-limit.service.js");
-    rateLimitService.checkRequestLimit.mockResolvedValueOnce(false);
-    await registerSecurityPlugins(app);
-    const response = await app.inject({
+    const response = await app!.inject({
       method: "GET",
       url: "/test",
-      user: { sub: "user1", type: "user" },
-    } as any);
-    expect(response.statusCode).toBe(429);
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      ok: true,
+      userPlan: null,
+    });
   });
 
-  it("allows all origins by default (CORS)", async () => {
-    await registerSecurityPlugins(app);
-    const response = await app.inject({
+  it("allows all origins by default for CORS preflight requests", async () => {
+    await setupApp();
+
+    const response = await app!.inject({
       method: "OPTIONS",
       url: "/test",
-      headers: { Origin: "https://evil.com", "Access-Control-Request-Method": "GET" },
+      headers: {
+        origin: "https://evil.com",
+        "access-control-request-method": "GET",
+      },
     });
+
     expect(response.statusCode).toBe(204);
     expect(response.headers["access-control-allow-origin"]).toBe("https://evil.com");
   });
 
-  it("applies global rate limit", async () => {
-    await registerSecurityPlugins(app);
-    for (let i = 0; i < 1000; i++) {
-      await app.inject({ method: "GET", url: "/test" });
-    }
-    const res = await app.inject({ method: "GET", url: "/test" });
-    // Should still allow due to skipOnError: true
-    expect([200, 429]).toContain(res.statusCode);
-  });
+  it("returns 429 when the FREE plan minute rate limit is exceeded", async () => {
+    mockGetEffectivePlanAccess.mockResolvedValueOnce({ type: "FREE" });
+    mockCheckRequestLimit.mockResolvedValueOnce(false);
 
-  it("handles plan-based rate limiting for authenticated user", async () => {
-    await registerSecurityPlugins(app);
-    const response = await app.inject({
+    await setupApp();
+
+    const response = await app!.inject({
       method: "GET",
       url: "/test",
-      headers: { Authorization: "Bearer test" },
-      user: { sub: "user1", type: "user" },
-    } as any);
-    expect([200, 429]).toContain(response.statusCode);
+      headers: {
+        "x-test-user": JSON.stringify({ sub: "user-1", type: "user" }),
+      },
+    });
+
+    expect(response.statusCode).toBe(429);
+    expect(mockCheckRequestLimit).toHaveBeenCalledWith("user:user-1", "FREE", "minute");
+    expect(mockLoggerWarn).toHaveBeenCalled();
   });
 
-  it("does not throw on rate limit service error", async () => {
-    const { rateLimitService } = await import("../services/plan-rate-limit.service.js");
-    rateLimitService.checkRequestLimit.mockRejectedValueOnce(new Error("fail"));
-    await registerSecurityPlugins(app);
-    const response = await app.inject({
+  it("stores the authenticated user plan on the request context", async () => {
+    mockGetEffectivePlanAccess.mockResolvedValueOnce({ type: "PRO" });
+
+    await setupApp();
+
+    const response = await app!.inject({
       method: "GET",
       url: "/test",
-      user: { sub: "user1", type: "user" },
-    } as any);
-    expect([200, 429]).toContain(response.statusCode);
+      headers: {
+        "x-test-user": JSON.stringify({ sub: "user-2", type: "user" }),
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      ok: true,
+      userPlan: "PRO",
+    });
+    expect(mockCheckRequestLimit).not.toHaveBeenCalled();
+  });
+
+  it("skips plan-based rate limiting for anonymous requests", async () => {
+    await setupApp();
+
+    const response = await app!.inject({
+      method: "GET",
+      url: "/test",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mockGetEffectivePlanAccess).not.toHaveBeenCalled();
+    expect(mockCheckRequestLimit).not.toHaveBeenCalled();
+  });
+
+  it("lets the request continue when plan-based rate limiting throws unexpectedly", async () => {
+    mockGetEffectivePlanAccess.mockResolvedValueOnce({ type: "FREE" });
+    mockCheckRequestLimit.mockRejectedValueOnce(new Error("rate limit service failure"));
+
+    await setupApp();
+
+    const response = await app!.inject({
+      method: "GET",
+      url: "/test",
+      headers: {
+        "x-test-user": JSON.stringify({ sub: "user-3", type: "user" }),
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      ok: true,
+      userPlan: null,
+    });
+    expect(mockLoggerError).toHaveBeenCalled();
   });
 });
