@@ -2,11 +2,13 @@ import Fastify, { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { registerSecurityPlugins } from "./security";
 
-const mockApiKeyFindUnique = vi.fn();
-const mockCheckRequestLimit = vi.fn();
-const mockGetEffectivePlanAccess = vi.fn();
-const mockLoggerWarn = vi.fn();
-const mockLoggerError = vi.fn();
+const mocks = vi.hoisted(() => ({
+  mockApiKeyFindUnique: vi.fn(),
+  mockCheckRequestLimit: vi.fn(),
+  mockGetEffectivePlanAccess: vi.fn(),
+  mockLoggerWarn: vi.fn(),
+  mockLoggerError: vi.fn(),
+}));
 
 vi.mock("../../config/env.js", () => ({
   env: {
@@ -23,27 +25,27 @@ vi.mock("../../infra/cache/redis.js", () => ({
 vi.mock("../../infra/database/prisma.js", () => ({
   prisma: {
     aPIKey: {
-      findUnique: mockApiKeyFindUnique,
+      findUnique: mocks.mockApiKeyFindUnique,
     },
   },
 }));
 
 vi.mock("../services/plan-rate-limit.service.js", () => ({
   rateLimitService: {
-    checkRequestLimit: mockCheckRequestLimit,
+    checkRequestLimit: mocks.mockCheckRequestLimit,
   },
 }));
 
 vi.mock("../services/plan-check.service.js", () => ({
   PlanCheckService: vi.fn().mockImplementation(() => ({
-    getEffectivePlanAccess: mockGetEffectivePlanAccess,
+    getEffectivePlanAccess: mocks.mockGetEffectivePlanAccess,
   })),
 }));
 
 vi.mock("../../config/logger.js", () => ({
   logger: {
-    warn: mockLoggerWarn,
-    error: mockLoggerError,
+    warn: mocks.mockLoggerWarn,
+    error: mocks.mockLoggerError,
   },
 }));
 
@@ -73,9 +75,9 @@ describe("registerSecurityPlugins", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApiKeyFindUnique.mockResolvedValue(null);
-    mockCheckRequestLimit.mockResolvedValue(true);
-    mockGetEffectivePlanAccess.mockResolvedValue({ type: "FREE" });
+    mocks.mockApiKeyFindUnique.mockResolvedValue(null);
+    mocks.mockCheckRequestLimit.mockResolvedValue(true);
+    mocks.mockGetEffectivePlanAccess.mockResolvedValue({ type: "FREE" });
   });
 
   afterEach(async () => {
@@ -117,8 +119,8 @@ describe("registerSecurityPlugins", () => {
   });
 
   it("returns 429 when the FREE plan minute rate limit is exceeded", async () => {
-    mockGetEffectivePlanAccess.mockResolvedValueOnce({ type: "FREE" });
-    mockCheckRequestLimit.mockResolvedValueOnce(false);
+    mocks.mockGetEffectivePlanAccess.mockResolvedValueOnce({ type: "FREE" });
+    mocks.mockCheckRequestLimit.mockResolvedValueOnce(false);
 
     await setupApp();
 
@@ -131,12 +133,12 @@ describe("registerSecurityPlugins", () => {
     });
 
     expect(response.statusCode).toBe(429);
-    expect(mockCheckRequestLimit).toHaveBeenCalledWith("user:user-1", "FREE", "minute");
-    expect(mockLoggerWarn).toHaveBeenCalled();
+    expect(mocks.mockCheckRequestLimit).toHaveBeenCalledWith("user:user-1", "FREE", "minute");
+    expect(mocks.mockLoggerWarn).toHaveBeenCalled();
   });
 
   it("stores the authenticated user plan on the request context", async () => {
-    mockGetEffectivePlanAccess.mockResolvedValueOnce({ type: "PRO" });
+    mocks.mockGetEffectivePlanAccess.mockResolvedValueOnce({ type: "PRO" });
 
     await setupApp();
 
@@ -153,7 +155,7 @@ describe("registerSecurityPlugins", () => {
       ok: true,
       userPlan: "PRO",
     });
-    expect(mockCheckRequestLimit).not.toHaveBeenCalled();
+    expect(mocks.mockCheckRequestLimit).not.toHaveBeenCalled();
   });
 
   it("skips plan-based rate limiting for anonymous requests", async () => {
@@ -165,13 +167,13 @@ describe("registerSecurityPlugins", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(mockGetEffectivePlanAccess).not.toHaveBeenCalled();
-    expect(mockCheckRequestLimit).not.toHaveBeenCalled();
+    expect(mocks.mockGetEffectivePlanAccess).not.toHaveBeenCalled();
+    expect(mocks.mockCheckRequestLimit).not.toHaveBeenCalled();
   });
 
   it("lets the request continue when plan-based rate limiting throws unexpectedly", async () => {
-    mockGetEffectivePlanAccess.mockResolvedValueOnce({ type: "FREE" });
-    mockCheckRequestLimit.mockRejectedValueOnce(new Error("rate limit service failure"));
+    mocks.mockGetEffectivePlanAccess.mockResolvedValueOnce({ type: "FREE" });
+    mocks.mockCheckRequestLimit.mockRejectedValueOnce(new Error("rate limit service failure"));
 
     await setupApp();
 
@@ -188,6 +190,6 @@ describe("registerSecurityPlugins", () => {
       ok: true,
       userPlan: null,
     });
-    expect(mockLoggerError).toHaveBeenCalled();
+    expect(mocks.mockLoggerError).toHaveBeenCalled();
   });
 });
